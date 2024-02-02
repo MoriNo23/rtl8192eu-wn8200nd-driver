@@ -5,6 +5,8 @@ ccflags-y += -O1
 #ccflags-y += -Werror
 #ccflags-y += -pedantic
 #ccflags-y += -Wshadow -Wpointer-arith -Wcast-qual -Wstrict-prototypes -Wmissing-prototypes
+ccflags-y += -Wmissing-prototypes
+ccflags-y += -Werror=missing-prototypes
 
 ccflags-y += -Wno-unused-variable
 #ccflags-y += -Wno-unused-value

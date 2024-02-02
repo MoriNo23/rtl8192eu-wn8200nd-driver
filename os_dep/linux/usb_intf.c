@@ -854,6 +854,8 @@ static void process_spec_devid(const struct usb_device_id *pdid)
 }
 
 #ifdef SUPPORT_HW_RFOFF_DETECTED
+int rtw_hw_suspend(_adapter *padapter);
+
 int rtw_hw_suspend(_adapter *padapter)
 {
 	struct pwrctrl_priv *pwrpriv;
@@ -925,6 +927,7 @@ error_exit:
 	return -1;
 
 }
+int rtw_hw_resume(_adapter *padapter);
 
 int rtw_hw_resume(_adapter *padapter)
 {
@@ -987,7 +990,7 @@ exit:
 	return ret;
 }
 
-int rtw_resume_process(_adapter *padapter)
+static int rtw_resume_process(_adapter *padapter)
 {
 	int ret;
 	struct pwrctrl_priv *pwrpriv = adapter_to_pwrctl(padapter);
@@ -1071,7 +1074,7 @@ extern void rtd2885_wlan_netlink_sendMsg(char *action_string, char *name);
  * notes: drv_init() is called when the bus driver has located a card for us to support.
  *        We accept the new device by returning 0.
 */
-_adapter *rtw_usb_primary_adapter_init(struct dvobj_priv *dvobj,
+static _adapter *rtw_usb_primary_adapter_init(struct dvobj_priv *dvobj,
 	struct usb_interface *pusb_intf)
 {
 	_adapter *padapter = NULL;

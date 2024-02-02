@@ -641,6 +641,7 @@ void nat25_db_cleanup(_adapter *priv)
 	_exit_critical_bh(&priv->br_ext_lock, &irqL);
 }
 
+void nat25_db_expire(_adapter *priv);
 
 void nat25_db_expire(_adapter *priv)
 {
@@ -757,6 +758,8 @@ static int checkIPMcAndReplace(_adapter *priv, struct sk_buff *skb, unsigned int
 	return 0;
 }
 #endif
+
+int nat25_db_handle(_adapter *priv, struct sk_buff *skb, int method);
 
 int nat25_db_handle(_adapter *priv, struct sk_buff *skb, int method)
 {
@@ -1391,6 +1394,7 @@ int nat25_db_handle(_adapter *priv, struct sk_buff *skb, int method)
 	return -1;
 }
 
+int nat25_handle_frame(_adapter *priv, struct sk_buff *skb);
 
 int nat25_handle_frame(_adapter *priv, struct sk_buff *skb)
 {
@@ -1523,6 +1527,8 @@ struct dhcpMessage {
 	u_int8_t options[308]; /* 312 - cookie */
 };
 
+void dhcp_flag_bcast(_adapter *priv, struct sk_buff *skb);
+
 void dhcp_flag_bcast(_adapter *priv, struct sk_buff *skb)
 {
 	if (skb == NULL)
@@ -1563,6 +1569,8 @@ void dhcp_flag_bcast(_adapter *priv, struct sk_buff *skb)
 	}
 }
 
+void *scdb_findEntry(_adapter *priv, unsigned char *macAddr,
+		     unsigned char *ipAddr);
 
 void *scdb_findEntry(_adapter *priv, unsigned char *macAddr,
 		     unsigned char *ipAddr)
