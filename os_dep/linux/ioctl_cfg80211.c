@@ -6763,7 +6763,7 @@ exit:
 static int cfg80211_rtw_get_channel(struct wiphy *wiphy,
 	struct wireless_dev *wdev,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 2)
-	u32 link_id,
+	unsigned int link_id,
 #endif		
 	struct cfg80211_chan_def *chandef)
 {
