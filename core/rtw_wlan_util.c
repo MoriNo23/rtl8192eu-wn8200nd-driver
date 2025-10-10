@@ -1782,6 +1782,7 @@ void HT_get_ss_from_mcs_set(u8 *mcs_set, u8 *Rx_ss)
 	*Rx_ss = r_ss;
 }
 
+__attribute__((no_sanitize("undefined")))
 void HT_caps_handler_infra_ap(_adapter *padapter, PNDIS_802_11_VARIABLE_IEs pIE)
 {
 	unsigned int	i;
