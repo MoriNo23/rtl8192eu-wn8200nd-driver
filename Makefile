@@ -1,4 +1,3 @@
-ccflags-y += $(USER_ccflags-y)
 ccflags-y += -O1
 #ccflags-y += -O3
 #ccflags-y += -Wall
@@ -2319,6 +2318,8 @@ USER_MODULE_NAME ?=
 ifneq ($(USER_MODULE_NAME),)
 MODULE_NAME := $(USER_MODULE_NAME)
 endif
+
+ccflags-y += $(USER_ccflags-y)
 
 ifneq ($(KERNELRELEASE),)
 
