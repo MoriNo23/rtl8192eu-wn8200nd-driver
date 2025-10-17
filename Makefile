@@ -14,7 +14,7 @@ ccflags-y += -Wno-unused-variable
 #ccflags-y += -Wno-unused
 #ccflags-y += -Wno-uninitialized
 
-GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | bc )
+GCC_VER_49 := $(shell echo `$(CC) -dumpversion | cut -f1-2 -d.` \>= 4.9 | `which bc` )
 ifeq ($(GCC_VER_49),1)
 ccflags-y += -Wno-date-time	# Fix compile error && warning on gcc 4.9 and later
 endif
@@ -132,6 +132,7 @@ CONFIG_MP_VHT_HW_TX_MODE = n
 CONFIG_PLATFORM_I386_PC = y
 CONFIG_PLATFORM_ARM_AARCH64 = n
 CONFIG_PLATFORM_ARM_RPI = n
+CONFIG_PLATFORM_ARM_YOCTO = n
 CONFIG_PLATFORM_ANDROID_X86 = n
 CONFIG_PLATFORM_ANDROID_INTEL_X86 = n
 CONFIG_PLATFORM_JB_X86 = n
@@ -1344,6 +1345,16 @@ KSRC ?= /lib/modules/$(KVER)/build
 MODDESTDIR := /lib/modules/$(KVER)/kernel/drivers/net/wireless/
 endif
 
+ifeq ($(CONFIG_PLATFORM_ARM_YOCTO), y)
+ccflags-y += -DCONFIG_LITTLE_ENDIAN
+ccflags-y += -DCONFIG_IOCTL_CFG80211 -DRTW_USE_CFG80211_STA_EVENT
+ARCH := arm
+CROSS_COMPILE ?=
+KVER  := $(KERNEL_VERSION)
+KSRC ?= $(KERNEL_SRC)
+MODDESTDIR ?= /lib/modules/$(KVER)/kernel/drivers/net/wireless/
+endif
+
 ifeq ($(CONFIG_PLATFORM_NV_TK1), y)
 ccflags-y += -DCONFIG_PLATFORM_NV_TK1
 ccflags-y += -DCONFIG_LITTLE_ENDIAN
@@ -2437,6 +2448,9 @@ all: modules
 
 modules:
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KSRC) M=$(shell pwd)  modules
+	
+modules_install:
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KSRC) M=$(shell pwd)  modules_install	
 
 strip:
 	$(CROSS_COMPILE)strip $(MODULE_NAME).ko --strip-unneeded
