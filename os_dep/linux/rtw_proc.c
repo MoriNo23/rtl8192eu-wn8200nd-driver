@@ -634,7 +634,7 @@ static int proc_get_rf_reg_dump(struct seq_file *m, void *v)
 }
 
 #ifdef CONFIG_RTW_LED
-int proc_get_led_config(struct seq_file *m, void *v)
+static int proc_get_led_config(struct seq_file *m, void *v)
 {
 	struct net_device *dev = m->private;
 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
@@ -644,7 +644,7 @@ int proc_get_led_config(struct seq_file *m, void *v)
 	return 0;
 }
 
-ssize_t proc_set_led_config(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+static ssize_t proc_set_led_config(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
 {
 	struct net_device *dev = data;
 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
