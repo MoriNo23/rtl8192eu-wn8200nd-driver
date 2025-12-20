@@ -14,7 +14,7 @@ ccflags-y += -Wno-unused-variable
 #ccflags-y += -Wno-unused-value
 #ccflags-y += -Wno-unused-label
 #ccflags-y += -Wno-unused-parameter
-#ccflags-y += -Wno-unused-function
+ccflags-y += -Wno-unused-function
 #ccflags-y += -Wno-unused
 #ccflags-y += -Wno-uninitialized
 
@@ -25,7 +25,7 @@ endif
 
 ccflags-y += -I$(src)/include
 
-EXTRA_LDFLAGS += --strip-debug
+ldflags-y += --strip-debug
 
 CONFIG_AUTOCFG_CP = n
 
