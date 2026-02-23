@@ -16,6 +16,7 @@
 
 /* #include <drv_types.h> */
 #include <rtl8192e_hal.h>
+#include <rtw_pwrctrl.h>
 
 
 #ifndef CONFIG_USB_HCI

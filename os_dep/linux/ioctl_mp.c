@@ -2506,7 +2506,7 @@ int rtw_mp_pwrlmt(struct net_device *dev,
 
 	} else
 #endif
-		pch += sprintf(pch, "Get Power Limit Status:%s\n", (registry_par->RegEnableTxPowerLimit == 1) ? "ON" : "OFF");
+		pch += sprintf(pch, "Get Power Limit Status:%s\n", (registry_par->RegEnableTxPowerByRate == 1) ? "ON" : "OFF");
 
 
 	wrqu->data.length = strlen(extra);
