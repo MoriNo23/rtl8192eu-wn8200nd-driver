@@ -330,7 +330,7 @@ int rtw_low_power = 0;
 int rtw_wifi_spec = 0;
 
 
-int rtw_trx_path_bmp = 0x00;
+int rtw_trx_path_bmp = 0x33; /* TL-WN8200ND: force 2x2 MIMO (TX=0011, RX=0011) */
 module_param(rtw_trx_path_bmp, int, 0644); /* [7:4]TX path bmp, [0:3]RX path bmp, 0: not specified */
 
 #ifdef CONFIG_SPECIAL_RF_PATH /* configure Nss/xTxR IC to 1ss/1T1R */
@@ -392,7 +392,7 @@ int rtw_bt_ampdu = 1 ; /* 0:Disable BT control A-MPDU, 1:Enable BT control A-MPD
 
 int rtw_AcceptAddbaReq = _TRUE;/* 0:Reject AP's Add BA req, 1:Accept AP's Add BA req. */
 
-int rtw_antdiv_cfg = 2; /* 0:OFF , 1:ON, 2:decide by Efuse config */
+int rtw_antdiv_cfg = 1; /* 0:OFF , 1:ON (forced for TL-WN8200ND 2-antenna), 2:decide by Efuse config */
 int rtw_antdiv_type = 0
 	; /* 0:decide by efuse  1: for 88EE, 1Tx and 1RxCG are diversity.(2 Ant with SPDT), 2:  for 88EE, 1Tx and 2Rx are diversity.( 2 Ant, Tx and RxCG are both on aux port, RxCS is on main port ), 3: for 88EE, 1Tx and 1RxCG are fixed.(1Ant, Tx and RxCG are both on aux port) */
 
