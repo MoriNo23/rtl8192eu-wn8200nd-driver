@@ -43,4 +43,4 @@ Driver optimizado para Realtek RTL8192EU en kernels modernos.
 - Español - README.md (versión en español)
 
 ## Enlace / Link
-https://github.com/MoriNo23/rtl8192eu-linux-OptimizedFork
+https://github.com/MoriNo23/rtl8192eu-linux
