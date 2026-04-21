@@ -930,7 +930,7 @@ module_param(rtw_napi_threshold, int, 0644);
 #ifdef CONFIG_RTW_GRO
 /*following setting should define GRO in Makefile
 enable gro = 1, disable gro = 0*/
-int rtw_en_gro = 1;
+int rtw_en_gro = 0; /* disabled by default for CPU optimization */
 module_param(rtw_en_gro, int, 0644);
 #endif /* CONFIG_RTW_GRO */
 #endif /* CONFIG_RTW_NAPI */
