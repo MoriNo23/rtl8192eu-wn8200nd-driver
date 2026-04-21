@@ -1,6 +1,6 @@
 # rtl8192eu-linux
 
-## Versión / Version
+## Version / Version
 
 Driver optimizado para Realtek RTL8192EU en kernels modernos.
 
@@ -13,7 +13,7 @@ Driver optimizado para Realtek RTL8192EU en kernels modernos.
 - **rtw_adaptivity_mode=1**: Modo adaptativo para interferencia
 
 ### Opcionales / Optional:
-- **CONFIG_NARROWBAND_SUPPORTING**: Soporte para banda estrecha (5M/10M) - Solo si usas redes congestionadas / Narrowband support (5M/10M) - Only if using congested networks
+- **CONFIG_NARROWBAND_SUPPORTING**: Soporte para banda estrecha (5M/10M)
 
 ## Requisitos / Requirements
 
@@ -35,8 +35,8 @@ Driver optimizado para Realtek RTL8192EU en kernels modernos.
 ## Notas / Notes
 
 - **Valores hardcodeados**: Los parámetros óptimos están hardcodeados en `os_dep/linux/os_intfs.c`
-- **Usa siempre corriente**: Optimizado para laptops conectadas, sin batería / Always use power: Optimized for laptops always connected (no battery)
-- **No usar configuraciones de ahorro**: Las mejoras de batería (LPS, WOWLAN) NO son para este uso / Do NOT enable power saving features (incompatible with always-on usage)
+- **Usa siempre corriente**: Optimizado para laptops conectadas, sin batería
+- **No usar configuraciones de ahorro**: Las mejoras de batería no son para este uso
 
 ## Idiomas soportados / Supported Languages
 - English - README.md
@@ -45,23 +45,35 @@ Driver optimizado para Realtek RTL8192EU en kernels modernos.
 ## Enlace / Link
 https://github.com/MoriNo23/rtl8192eu-linux
 
-## Mejoras Agresivas de Rendimiento / Aggressive Performance Optimizations
+## ⚡ Mejoras de Rendimiento (Performance Optimizations)
 
-### Optimizaciones Clave Activadas / Key Optimizations Activated:
-- **2x2 MIMO Forzado** (`0x33`): Máximo throughput en ambas bandas
-- **Potencia Máxima** (`255`): Alcance y velocidad óptimos
-- **NAPI + GRO**: Reduce CPU usage en redes concurridas
-- **A-MPDU + A-MSDU**: Agregación dual de hasta 64 frames
-- **Adaptive Rate**: Ajuste dinámico según calidad de señal
-- **Coexistencia BT**: Gestión automática de interferencias
+### Módulos que disminuyen CPU (Modules that reduce CPU usage):
+- `rtw_low_power` - Modo bajo consumo → Liberar para CPU
+- `rtw_smart_ps` - Power Save → Liberar para CPU
+- `rtw_lps_level` - Nivel LPS → Liberar para CPU
+- `rtw_ips_mode` - Modo IPS → Liberar para CPU
+- `rtw_btcoex_enable` - Coexistencia BT → Liberar si no usas BT
+- `rtw_usb_rxagg_mode` - Agregación USB → Liberar si no usas USB
+- `rtw_en_napi` - NAPI → Liberar si no usas streaming
+- `rtw_en_gro` - Agregación GRO → Liberar si no usas streaming
 
-### Para Máximo Throughput / For Maximum Throughput:
+### Para liberar módulos (e.g., laptop sin BT/USB):
 ```bash
-# Ya configurado: rtw_low_power=0, rtw_smart_ps=0
-# Desactivado: adaptativo agresivo para rendimiento puro
+sudo -S -p '' rmmod btusb  # Si no usas Bluetooth
+sudo -S -p '' rmmod 8192eu  # Luego: make && sudo -S -p '' insmod 8192eu.ko
 ```
 
-### Resultado / Result:
+### Parámetros de rendimiento (tu configuración actual):
+```
+rtw_trx_path_bmp=0x33    → 2x2 MIMO forzado (máximo throughput)
+rtw_antdiv_cfg=1         → Diversity siempre activada
+rtw_TxBBSwing_2G=255     → Potencia máxima 2.4GHz
+rtw_adaptivity_mode=1    → Adaptativo para interferencia
+rtw_low_power=0          → Sin ahorro (máximo rendimiento)
+rtw_btcoex_enable=2      → Coexistencia BT automática
+```
+
+### Resultado:
 - ⚡ **Máximo throughput** en laptop siempre enchufada
 - 📶 **Estabilidad óptima** con balance adaptativo
-- 🔋 **Sin límites de energía**
+- 🔋 **Sin límites de energía** (corriente)
