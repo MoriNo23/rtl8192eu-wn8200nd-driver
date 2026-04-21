@@ -53,9 +53,9 @@ CONFIG_PCI_HCI = n
 CONFIG_SDIO_HCI = n
 CONFIG_GSPI_HCI = n
 ########################## Features ###########################
-CONFIG_AP_MODE = y
-CONFIG_P2P = y
-CONFIG_MP_INCLUDED = y
+CONFIG_AP_MODE = n
+CONFIG_P2P = n
+CONFIG_MP_INCLUDED = n
 CONFIG_POWER_SAVING = n
 CONFIG_IPS_MODE = default
 CONFIG_LPS_MODE = default
@@ -107,7 +107,7 @@ CONFIG_RTW_DEBUG = n
 CONFIG_RTW_LOG_LEVEL = 4
 
 # enable /proc/net/rtlxxxx/ debug interfaces
-CONFIG_PROC_DEBUG = y
+CONFIG_PROC_DEBUG = n
 
 ######################## Wake On Lan ##########################
 CONFIG_WOWLAN = n
@@ -200,6 +200,7 @@ CONFIG_PLATFORM_AML_S905 = n
 CONFIG_PLATFORM_ZTE_ZX296716 = n
 ########### CUSTOMER ################################
 CONFIG_CUSTOMER_HUAWEI_GENERAL = n
+CONFIG_CUSTOMER_HUAWEI = n
 
 CONFIG_DRVEXT_MODULE = n
 
