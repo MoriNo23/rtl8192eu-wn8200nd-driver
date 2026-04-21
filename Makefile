@@ -87,8 +87,8 @@ CONFIG_RTW_GRO = n
 CONFIG_RTW_NETIF_SG = y
 CONFIG_RTW_IPCAM_APPLICATION = n
 CONFIG_RTW_REPEATER_SON = n
-CONFIG_ICMP_VOQ = n
-CONFIG_IP_R_MONITOR = n #arp VOQ and high rate
+CONFIG_ICMP_VOQ = y
+CONFIG_IP_R_MONITOR = y #arp VOQ and high rate
 # user priority mapping rule : tos, dscp
 CONFIG_RTW_UP_MAPPING_RULE = tos
 CONFIG_RTW_MBO = n
