@@ -44,3 +44,24 @@ Driver optimizado para Realtek RTL8192EU en kernels modernos.
 
 ## Enlace / Link
 https://github.com/MoriNo23/rtl8192eu-linux
+
+## ⚡ Mejoras Agresivas de Rendimiento
+
+### Optimizaciones Clave Activadas:
+- **2x2 MIMO Forzado** (`0x33`): Máximo throughput en ambas bandas
+- **Potencia Máxima** (`255`): Alcance y velocidad óptimos  
+- **NAPI + GRO**: Reduce CPU usage en redes concurridas
+- **A-MPDU + A-MSDU**: Agregación dual de hasta 64 frames
+- **Adaptive Rate**: Ajuste dinámico según calidad de señal
+- **Coexistencia BT**: Gestión automática de interferencias
+
+### Para Máximo Throughput:
+```bash
+# Ya configurado: rtw_low_power=0, rtw_smart_ps=0
+# Desactivado: adaptativo agresivo para rendimiento puro
+```
+
+### Resultado:
+- ⚡ **Máximo throughput** en laptop siempre enchufada
+- 📶 **Estabilidad óptima** con balance adaptativo
+- 🔋 **Sin límites de energía**
