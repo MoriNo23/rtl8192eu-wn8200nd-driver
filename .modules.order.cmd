@@ -1,1 +1,0 @@
-savedcmd_/home/fullmetal/InstalarDriver/rtl8192eu-linux/modules.order := {   echo /home/fullmetal/InstalarDriver/rtl8192eu-linux/8192eu.o; :; } > /home/fullmetal/InstalarDriver/rtl8192eu-linux/modules.order

@@ -1,1 +1,0 @@
-savedcmd_/home/fullmetal/InstalarDriver/rtl8192eu-linux/Module.symvers :=  scripts/mod/modpost -M -m       -o /home/fullmetal/InstalarDriver/rtl8192eu-linux/Module.symvers -n -T /home/fullmetal/InstalarDriver/rtl8192eu-linux/modules.order -i Module.symvers -e 
