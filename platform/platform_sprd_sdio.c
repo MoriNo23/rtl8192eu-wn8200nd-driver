@@ -13,6 +13,7 @@
  *
  *****************************************************************************/
 #include <drv_types.h>
+#include <linux/delay.h>
 
 extern void sdhci_bus_scan(void);
 #ifndef ANDROID_2X
@@ -41,24 +42,28 @@ int platform_wifi_power_on(void)
 	/* Pull up BT reset pin. */
 	rtw_wifi_gpio_wlan_ctrl(WLAN_BT_PWDN_ON);
 #endif
-	rtw_mdelay_os(5);
+	/* Reemplazo de 5ms bloqueante por rango de micro-sleep */
+	usleep_range(5000, 6000);   /* 5ms - 6ms */
 
 	sdhci_bus_scan();
 #ifdef CONFIG_RTL8723B
 	/* YJ,test,130305 */
-	rtw_mdelay_os(1000);
+	/* 1000ms delay replaced with non-blocking sleep */
+	msleep(1000);
 #endif
 #ifdef ANDROID_2X
-	rtw_mdelay_os(200);
+	/* Non-blocking sleep */
+	msleep(200);
 #else /* !ANDROID_2X */
 	if (1) {
-		int i = 0;
-
-		for (i = 0; i <= 50; i++) {
-			msleep(10);
+		/* More aggressive polling with shorter sleeps */
+		int retry = 500;  /* ~500ms max wait */
+		while (retry > 0) {
 			if (sdhci_device_attached())
 				break;
-			printk("%s delay times:%d\n", __func__, i);
+			usleep_range(1000, 1500); /* 1ms - 1.5ms */
+			retry--;
+			printk("%s delay times:%d\n", __func__, 500 - retry);
 		}
 	}
 #endif /* !ANDROID_2X */
@@ -70,7 +75,8 @@ void platform_wifi_power_off(void)
 {
 	/* Pull down pwd pin, make wifi enter power down mode. */
 	rtw_wifi_gpio_wlan_ctrl(WLAN_PWDN_OFF);
-	rtw_mdelay_os(5);
+	/* Reemplazo de 5ms bloqueante por rango de micro-sleep */
+	usleep_range(5000, 6000);   /* 5ms - 6ms */
 	rtw_wifi_gpio_deinit();
 
 #ifdef CONFIG_RTL8188E

@@ -2460,9 +2460,11 @@ u32 mp_query_psd(PADAPTER pAdapter, u8 *data)
 
 			halrf_psd_init(p_dm);
 #ifdef CONFIG_LONG_DELAY_ISSUE
-		rtw_msleep_os(100);
+		/* Non-blocking sleep when macro is active */
+		msleep(100);
 #else
-		rtw_mdelay_os(10);
+		/* Short delay without blocking - allows rescheduling */
+		usleep_range(10000, 11000);   /* 10ms - 11ms */
 #endif
 			halrf_psd_query(p_dm, psdbuf, 256);
 
@@ -2491,9 +2493,11 @@ u32 mp_query_psd(PADAPTER pAdapter, u8 *data)
 	}
 
 #ifdef CONFIG_LONG_DELAY_ISSUE
-	rtw_msleep_os(100);
+	/* Non-blocking sleep when macro is active */
+	msleep(100);
 #else
-	rtw_mdelay_os(100);
+	/* 100ms delay without blocking the core */
+	msleep(100);  /* Allows rescheduling */
 #endif
 
 	if (psd_analysis)

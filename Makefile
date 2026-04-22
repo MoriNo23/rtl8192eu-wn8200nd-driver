@@ -28,6 +28,7 @@ ccflags-y += -I$(src)/include
 ldflags-y += --strip-debug
 
 CONFIG_AUTOCFG_CP = n
+CONFIG_LONG_DELAY_ISSUE = y
 
 ########################## WIFI IC ############################
 CONFIG_MULTIDRV = n
