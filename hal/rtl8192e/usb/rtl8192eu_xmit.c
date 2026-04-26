@@ -908,6 +908,10 @@ static void rtl8192eu_hostap_mgnt_xmit_cb(struct urb *urb)
 
 	/* RTW_INFO("%s\n", __FUNCTION__); */
 
+	/* Des-anclar y liberar el URB (era un leak) */
+	usb_unanchor_urb(urb);
+	usb_free_urb(urb);
+
 	rtw_skb_free(skb);
 #endif
 }
@@ -1013,9 +1017,10 @@ s32 rtl8192eu_hostap_mgnt_xmit_entry(_adapter *padapter, _pkt *pkt)
 	rc = usb_submit_urb(urb, GFP_ATOMIC);
 	if (rc < 0) {
 		usb_unanchor_urb(urb);
+		usb_free_urb(urb);
 		kfree_skb(skb);
 	}
-	usb_free_urb(urb);
+	/* NOTA: No se libera el URB aquí. Se libera en el callback tras completar. */
 
 
 _exit:

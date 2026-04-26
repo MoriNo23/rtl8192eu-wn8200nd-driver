@@ -259,11 +259,11 @@ struct reg_protocol_wt {
 
 };
 #ifdef CONFIG_PCI_HCI
-#define MAX_CONTINUAL_IO_ERR 4
+#define MAX_CONTINUAL_IO_ERR 10
 #endif
 
 #ifdef CONFIG_USB_HCI
-#define MAX_CONTINUAL_IO_ERR 4
+#define MAX_CONTINUAL_IO_ERR 30  /* Aumentado de 10 a 30 para mayor tolerancia en USB 2.0 */
 #endif
 
 #ifdef CONFIG_SDIO_HCI

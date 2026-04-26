@@ -404,9 +404,9 @@ int rtw_single_ant_path; /*0:main ant , 1:aux ant , Fixed single antenna path, d
 int rtw_switch_usb_mode = 0;
 
 #ifdef CONFIG_USB_AUTOSUSPEND
-int rtw_enusbss = 1;/* 0:disable,1:enable */
+/* int rtw_enusbss = 1; */ /* 0:disable,1:enable (DESACTIVADO para estabilidad) */
 #else
-int rtw_enusbss = 0;/* 0:disable,1:enable */
+int rtw_enusbss = 0; /* 0:disable,1:enable */
 #endif
 
 int rtw_hwpdn_mode = 2; /* 0:disable,1:enable,2: by EFUSE config */

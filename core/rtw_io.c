@@ -468,6 +468,7 @@ int rtw_inc_and_chk_continual_io_error(struct dvobj_priv *dvobj)
 	value = ATOMIC_INC_RETURN(&dvobj->continual_io_error);
 	if (value > MAX_CONTINUAL_IO_ERR) {
 		RTW_INFO("[dvobj:%p][ERROR] continual_io_error:%d > %d\n", dvobj, value, MAX_CONTINUAL_IO_ERR);
+		RTW_INFO("=== DRIVER_DEBUG: Umbral de error I/O alcanzado. Posible micro-desconexión USB detectada. ===\n");
 		ret = _TRUE;
 	} else {
 		/* RTW_INFO("[dvobj:%p] continual_io_error:%d\n", dvobj, value); */
