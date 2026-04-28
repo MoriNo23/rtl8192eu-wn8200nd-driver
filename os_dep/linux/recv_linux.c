@@ -368,7 +368,6 @@ static int napi_recv(_adapter *padapter, int budget)
 		if (rtw_netif_receive_skb(padapter->pnetdev, pskb) == NET_RX_SUCCESS)
 			rx_ok = _TRUE;
 
-next:
 		if (rx_ok == _TRUE) {
 			work_done++;
 			DBG_COUNTER(padapter->rx_logs.os_netif_ok);
@@ -499,10 +498,11 @@ void rtw_os_recv_indicate_pkt(_adapter *padapter, _pkt *pkt, union recv_frame *r
 #endif /* CONFIG_RTW_NAPI */
 
 		ret = rtw_netif_rx(padapter->pnetdev, pkt);
-		if (ret == NET_RX_SUCCESS)
+		if (ret == NET_RX_SUCCESS) {
 			DBG_COUNTER(padapter->rx_logs.os_netif_ok);
-		else
+		} else {
 			DBG_COUNTER(padapter->rx_logs.os_netif_err);
+		}
 	}
 }
 
