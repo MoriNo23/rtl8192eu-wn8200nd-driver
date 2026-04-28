@@ -498,8 +498,7 @@ _init_UsbAggregationSetting_8192EU(
  *	12/10/2010	MHC		Create Version 0.
  *
  *---------------------------------------------------------------------------*/
-void
-static USB_AggModeSwitch(
+static void USB_AggModeSwitch(
 		PADAPTER			Adapter
 )
 {
@@ -1097,8 +1096,7 @@ exit:
 	return status;
 }
 
-void
-static hal_poweroff_8192eu(
+static void hal_poweroff_8192eu(
 		PADAPTER			Adapter
 )
 {
@@ -1312,8 +1310,7 @@ hal_ReadIDs_8192EU(
 	RTW_INFO("Customer ID: 0x%02X, SubCustomer ID: 0x%02X\n", pHalData->EEPROMCustomerID, pHalData->EEPROMSubCustomerID);
 }
 
-void
-static hal_CustomizedBehavior_8192EU(
+static void hal_CustomizedBehavior_8192EU(
 		PADAPTER	Adapter
 )
 {
@@ -1673,8 +1670,7 @@ static void GetHwReg8192EU(PADAPTER Adapter, u8 variable, u8 *val)
 	}
 
 }
-u8
-static GetHalDefVar8192EUsb(
+static u8 GetHalDefVar8192EUsb(
 		PADAPTER				Adapter,
 		HAL_DEF_VARIABLE		eVariable,
 		void						*pValue
@@ -1698,8 +1694,7 @@ static GetHalDefVar8192EUsb(
  *	Description:
  *		Change default setting of specified variable.
  *   */
-u8
-static SetHalDefVar8192EUsb(
+static u8 SetHalDefVar8192EUsb(
 		PADAPTER				Adapter,
 		HAL_DEF_VARIABLE		eVariable,
 		void						*pValue
