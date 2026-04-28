@@ -611,7 +611,7 @@ HalDetectSelectiveSuspendMode(
 }	/* HalDetectSelectiveSuspendMode */
 #endif
 
-rt_rf_power_state RfOnOffDetect(PADAPTER pAdapter)
+static rt_rf_power_state RfOnOffDetect(PADAPTER pAdapter)
 {
 	struct pwrctrl_priv *pwrctl = adapter_to_pwrctl(pAdapter);
 	HAL_DATA_TYPE		*pHalData = GET_HAL_DATA(pAdapter);

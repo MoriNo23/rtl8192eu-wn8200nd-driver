@@ -292,7 +292,7 @@ void phydm_fahm_dbg(void *dm_void, char input[][16], u32 *_used, char *output,
 	u32 i;
 
 	for (i = 0; i < 2; i++) {
-		if (input[i + 1])
+		if (input[i + 1][0])
 			PHYDM_SSCANF(input[i + 1], DCMD_DECIMAL, &var1[i]);
 	}
 
@@ -1008,8 +1008,8 @@ phydm_nhm_dym_pw_th_en(void *dm_void)
 #endif
 
 /*Environment Monitor*/
-boolean
-static phydm_nhm_mntr_chk(void *dm_void, u16 monitor_time /*unit ms*/)
+static boolean
+phydm_nhm_mntr_chk(void *dm_void, u16 monitor_time /*unit ms*/)
 {
 	struct dm_struct *dm = (struct dm_struct *)dm_void;
 	struct ccx_info *ccx = &dm->dm_ccx_info;
@@ -1180,7 +1180,7 @@ void phydm_nhm_dbg(void *dm_void, char input[][16], u32 *_used, char *output,
 	} else if (var1[0] == 3) { /*NMH dym_pw_th*/
 		if (dm->support_ic_type & ODM_RTL8822C) {
 			for (i = 1; i < 7; i++) {
-				if (input[i + 1]) {
+				if (input[i + 1][0]) {
 					PHYDM_SSCANF(input[i + 1], DCMD_DECIMAL,
 						     &var1[i]);
 				}
@@ -1209,7 +1209,7 @@ void phydm_nhm_dbg(void *dm_void, char input[][16], u32 *_used, char *output,
 		ccx->nhm_manual_ctrl = 1;
 
 		for (i = 1; i < 9; i++) {
-			if (input[i + 1]) {
+			if (input[i + 1][0]) {
 				PHYDM_SSCANF(input[i + 1], DCMD_DECIMAL,
 					     &var1[i]);
 			}
@@ -1657,7 +1657,7 @@ void phydm_clm_dbg(void *dm_void, char input[][16], u32 *_used, char *output,
 	u32 i;
 
 	for (i = 0; i < 4; i++) {
-		if (input[i + 1])
+		if (input[i + 1][0])
 			PHYDM_SSCANF(input[i + 1], DCMD_DECIMAL, &var1[i]);
 	}
 
@@ -2376,7 +2376,7 @@ void phydm_ifs_clm_dbg(void *dm_void, char input[][16], u32 *_used,
 	u16 th_shift = 0;
 
 	for (i = 0; i < 5; i++) {
-		if (input[i + 1])
+		if (input[i + 1][0])
 			PHYDM_SSCANF(input[i + 1], DCMD_DECIMAL,
 				     &var1[i]);
 	}

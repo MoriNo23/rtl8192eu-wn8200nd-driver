@@ -2022,11 +2022,11 @@ void rtw_bss_ex_del_p2p_attr(WLAN_BSSID_EX *bss_ex, u8 attr_id);
 
 uint rtw_del_wfd_ie(u8 *ies, uint ies_len_ori, const char *msg);
 void rtw_bss_ex_del_wfd_ie(WLAN_BSSID_EX *bss_ex);
+u8 *rtw_get_wfd_ie(const u8 *in_ie, int in_len, u8 *wfd_ie, uint *wfd_ielen);
 #ifdef CONFIG_WFD
 #ifdef CONFIG_RTW_DEBUG
 void dump_wfd_ie(void *sel, const u8 *ie, u32 ie_len);
 #endif
-u8 *rtw_get_wfd_ie(const u8 *in_ie, int in_len, u8 *wfd_ie, uint *wfd_ielen);
 u8 *rtw_get_wfd_attr(u8 *wfd_ie, uint wfd_ielen, u8 target_attr_id, u8 *buf_attr, u32 *len_attr);
 u8 *rtw_get_wfd_attr_content(u8 *wfd_ie, uint wfd_ielen, u8 target_attr_id, u8 *buf_content, uint *len_content);
 uint rtw_del_wfd_attr(u8 *ie, uint ielen_ori, u8 attr_id);

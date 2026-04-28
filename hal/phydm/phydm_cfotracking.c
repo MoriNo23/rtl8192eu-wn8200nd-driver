@@ -165,8 +165,8 @@ static void phydm_set_atc_status(void *dm_void, boolean atc_status)
 	cfo_track->is_atc_status = atc_status;
 }
 
-boolean
-static phydm_get_atc_status(void *dm_void)
+static boolean
+phydm_get_atc_status(void *dm_void)
 {
 	boolean atc_status = false;
 	struct dm_struct *dm = (struct dm_struct *)dm_void;

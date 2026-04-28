@@ -1333,8 +1333,8 @@ rtl8192E_ReadEFuse(
 }
 
 /* Do not support BT */
-void
-static Hal_EFUSEGetEfuseDefinition8192E(
+static void
+Hal_EFUSEGetEfuseDefinition8192E(
 			PADAPTER	pAdapter,
 			u8		efuseType,
 			u8		type,
@@ -4461,7 +4461,7 @@ static void read_chip_version_8192e(PADAPTER Adapter)
 	RTW_INFO("%s 0xF0 = 0x%x\n", __FUNCTION__, value32);
 
 	pHalData->version_id.ICType = CHIP_8192E;
-	pHalData->version_id.RFType = (value32 & RF_TYPE_ID) ? RF_2T2R : RF_1T1R;
+	pHalData->version_id.RFType = (HAL_RF_TYPE_E)((value32 & RF_TYPE_ID) ? RF_2T2R : RF_1T1R);
 	pHalData->version_id.ChipType = ((value32 & RTL_ID) ? TEST_CHIP : NORMAL_CHIP);
 
 	tmpvdr = (value32 & EXT_VENDOR_ID) >> EXT_VENDOR_ID_SHIFT;
