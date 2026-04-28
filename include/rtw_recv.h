@@ -27,7 +27,7 @@
 	#elif defined(CONFIG_SDIO_HCI)
 		#define NR_RECVBUFF (8)
 	#else
-		#define NR_RECVBUFF (8)
+		#define NR_RECVBUFF (24) /* perf: tripled from 8 for USB 2.0 burst absorption */
 	#endif
 #endif /* CONFIG_SINGLE_RECV_BUF */
 #ifdef CONFIG_PREALLOC_RX_SKB_BUFFER
@@ -223,7 +223,7 @@ struct rx_pkt_attrib	{
 #define SN_EQUAL(a, b)	(a == b)
 /* #define REORDER_WIN_SIZE	128 */
 /* #define REORDER_ENTRY_NUM	128 */
-#define REORDER_WAIT_TIME	(50) /* (ms) */
+#define REORDER_WAIT_TIME	(20) /* (ms) — perf: reduced from 50ms for lower A-MPDU reorder latency */
 
 #if defined(CONFIG_PLATFORM_RTK390X) && defined(CONFIG_USB_HCI)
 	#define RECVBUFF_ALIGN_SZ 32
