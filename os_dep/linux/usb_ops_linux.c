@@ -510,6 +510,11 @@ static void usb_write_port_complete(struct urb *purb, struct pt_regs *regs)
 
 
 	if (purb->status == 0) {
+ 		/* Reset continual I/O error counter on every successful TX URB. */
+		/* Without this, the counter is effectively monotonic — any burst
+		 * of 5+ errors since driver load permanently trips surprise_removed
+		 * even if all subsequent transmissions succeed. */
+		rtw_reset_continual_io_error(adapter_to_dvobj(padapter));
 
 	} else {
 		RTW_INFO("###=> urb_write_port_complete status(%d)\n", purb->status);
@@ -742,7 +747,7 @@ static void usb_init_recvbuf(_adapter *padapter, struct recv_buf *precvbuf)
 
 }
 
-static int recvbuf2recvframe(PADAPTER padapter, void *ptr);
+int recvbuf2recvframe(PADAPTER padapter, void *ptr);
 
 #ifdef CONFIG_USE_USB_BUFFER_ALLOC_RX
 void usb_recv_tasklet(unsigned long priv)

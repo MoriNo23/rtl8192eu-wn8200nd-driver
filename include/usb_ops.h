@@ -61,6 +61,8 @@ void rtl8192eu_set_hw_type(struct dvobj_priv *pdvobj);
 void interrupt_handler_8192eu(_adapter *padapter, u16 pkt_len, u8 *pbuf);
 #endif
 
+int recvbuf2recvframe(PADAPTER padapter, void *ptr);
+
 #endif
 
 #ifdef CONFIG_RTL8188F
