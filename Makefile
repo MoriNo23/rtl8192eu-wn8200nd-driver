@@ -1,5 +1,5 @@
-ccflags-y += -O1
-#ccflags-y += -O3
+ccflags-y += -O3
+#ccflags-y += -O1
 #ccflags-y += -Wall
 #ccflags-y += -Wextra
 #ccflags-y += -Werror
@@ -1251,6 +1251,7 @@ endif
 
 ifeq ($(CONFIG_RTW_NAPI), y)
 ccflags-y += -DCONFIG_RTW_NAPI
+ccflags-y += -DCONFIG_RTW_NAPI_DYNAMIC
 endif
 
 ifeq ($(CONFIG_RTW_GRO), y)
