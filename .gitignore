@@ -15,3 +15,9 @@ TL-WN821N_EUUS_V6_191211_Mac10.15/
 
 # IDE
 .vscode/
+
+# Agent config (local only)
+AGENTS.md
+
+# Assistant conversation logs
+hermes_conversation_*.json
