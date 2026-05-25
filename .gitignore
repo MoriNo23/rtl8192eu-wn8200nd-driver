@@ -9,15 +9,5 @@
 Module.symvers
 modules.order
 
-# Driver folders (Windows/Mac)
-TL-WN8200ND(UN)_V3_20250702_Win10_11/
-TL-WN821N_EUUS_V6_191211_Mac10.15/
-
-# IDE
-.vscode/
-
 # Agent config (local only)
 AGENTS.md
-
-# Assistant conversation logs
-hermes_conversation_*.json

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pkg-info overwrite-permissions="true" relocatable="false" identifier="com.109Driver.pkg" postinstall-action="none" version="1830.32.b13" format-version="2" generator-version="InstallCmds-714 (19B88)" install-location="/Library/Extensions/" auth="root">
+    <payload numberOfFiles="23" installKBytes="15979"/>
+    <bundle path="./RtWlanU.kext" id="com.realtek.driver.RtWlanU" CFBundleShortVersionString="1830.32.b13" CFBundleVersion="1830.32.b13"/>
+    <bundle-version>
+        <bundle id="com.realtek.driver.RtWlanU"/>
+    </bundle-version>
+    <upgrade-bundle>
+        <bundle id="com.realtek.driver.RtWlanU"/>
+    </upgrade-bundle>
+    <update-bundle/>
+    <atomic-update-bundle/>
+    <strict-identifier>
+        <bundle id="com.realtek.driver.RtWlanU"/>
+    </strict-identifier>
+    <relocate/>
+    <scripts>
+        <preinstall file="./PreInstall_Driver.command" component-id="com.realtek.driver.RtWlanU"/>
+        <postinstall file="./PostInstall_Driver.command" component-id="com.realtek.driver.RtWlanU"/>
+    </scripts>
+</pkg-info>

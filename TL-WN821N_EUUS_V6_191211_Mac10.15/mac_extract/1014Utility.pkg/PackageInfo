@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<pkg-info overwrite-permissions="true" relocatable="false" identifier="com.1014Utility.pkg" postinstall-action="none" version="5.0.9.b6" format-version="2" generator-version="InstallCmds-714 (19B88)" install-location="/Library/Application Support/WLAN/" auth="root">
+    <payload numberOfFiles="66" installKBytes="7049"/>
+    <bundle path="./StatusBarApp.app" id="com.realtek.utility.statusbar" CFBundleShortVersionString="5.0.9.b6" CFBundleVersion="1"/>
+    <bundle-version/>
+    <upgrade-bundle>
+        <bundle id="com.realtek.utility.statusbar"/>
+    </upgrade-bundle>
+    <update-bundle/>
+    <atomic-update-bundle/>
+    <strict-identifier>
+        <bundle id="com.realtek.utility.statusbar"/>
+    </strict-identifier>
+    <relocate/>
+    <scripts>
+        <preinstall file="./PreInstall_UI.command" component-id="com.realtek.utility.statusbar"/>
+        <postinstall file="./PostInstall_UI.command" component-id="com.realtek.utility.statusbar"/>
+    </scripts>
+</pkg-info>
