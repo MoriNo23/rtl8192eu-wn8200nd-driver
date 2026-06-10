@@ -3,9 +3,7 @@ name: Build rtl8192eu driver
 on:
   push:
     branches: [optimization-wn8200nd]
-  pull_request:
-    branches: [optimization-wn8200nd]
-  workflow_dispatch:  # permitir trigger manual
+  workflow_dispatch:
 
 jobs:
   build:
@@ -18,38 +16,60 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq linux-headers-generic build-essential bc
 
-      - name: Verify kernel headers
-        run: |
-          ls -la /lib/modules/$(uname -r)/build
-          echo "Kernel: $(uname -r)"
-
       - name: Build driver
         run: |
           make clean
           make -j$(nproc)
 
-      - name: Show module info
+      - name: Verify module
         run: |
-          if [ -f 8192eu.ko ]; then
-            modinfo 8192eu.ko
-            echo "=== PARÁMETROS COMPILADOS ==="
-            modinfo -p 8192eu.ko | grep -E "rtw_enusbss|rtw_en_napi|rtw_usb_rxagg|rtw_dynamic_agg"
-          else
+          if [ ! -f 8192eu.ko ]; then
             echo "ERROR: 8192eu.ko no se generó"
-            ls -la *.ko 2>/dev/null || ls -la
             exit 1
           fi
+          modinfo 8192eu.ko
+          echo "=== PARÁMETROS COMPILADOS ==="
+          modinfo -p 8192eu.ko | grep -E "rtw_enusbss|rtw_en_napi|rtw_usb_rxagg|rtw_dynamic_agg"
 
-      - name: Upload module (non-blocking)
-        continue-on-error: true
-        uses: actions/upload-artifact@v4
-        with:
-          name: rtl8192eu-module
-          path: 8192eu.ko
-          compression-level: 9
+      - name: Package and create release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          KERNEL=$(uname -r)
+          SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          TAG="build-$SHA-kernel-$KERNEL"
+
+          # Comprimir .ko con nombre descriptivo
+          gzip -9 -k 8192eu.ko
+          FILENAME="rtl8192eu-$SHA-$KERNEL.ko.gz"
+          mv 8192eu.ko.gz "$FILENAME"
+
+          # Notas del release
+          cat > /tmp/release-notes.md <<- EOM
+          Build automático del driver RTL8192EU (optimization-wn8200nd)
+
+          - Kernel: $KERNEL
+          - Commit: ${{ github.sha }}
+          - Parámetros: rtw_enusbss=0 rtw_en_napi=0 rtw_usb_rxagg_mode=0 rtw_dynamic_agg_enable=0
+          EOM
+
+          # Limpiar release previo con mismo tag (en caso de rebuild)
+          gh release delete "$TAG" --repo ${{ github.repository }} --yes 2>/dev/null || true
+          git tag -d "$TAG" 2>/dev/null || true
+          git push origin --delete refs/tags/"$TAG" 2>/dev/null || true
+
+          # Crear release y subir archivo
+          gh release create "$TAG" \
+            --repo ${{ github.repository }} \
+            --title "rtl8192eu build $SHA" \
+            --notes-file /tmp/release-notes.md \
+            "$FILENAME"
+
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
       - name: Build result
         run: |
-          echo "✅ Build completado exitosamente"
+          echo "✅ Build completado"
           echo "Kernel: $(uname -r)"
-          ls -lh 8192eu.ko
+          echo "Release: $RELEASE_TAG"
+          echo "Descargar: gh release download \"$RELEASE_TAG\" --repo ${{ github.repository }}"
