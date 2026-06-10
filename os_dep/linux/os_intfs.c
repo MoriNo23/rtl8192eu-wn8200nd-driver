@@ -142,10 +142,10 @@ int rtw_check_fw_ps = 1;
 int rtw_early_mode = 1;
 #endif
 
-int rtw_usb_rxagg_mode = 2;/* RX_AGG_DMA=1, RX_AGG_USB=2 */
+int rtw_usb_rxagg_mode = 0;/* 0:disable (estabilidad USB), 1:RX_AGG_DMA, 2:RX_AGG_USB */
 module_param(rtw_usb_rxagg_mode, int, 0644);
 
-int rtw_dynamic_agg_enable = 1;
+int rtw_dynamic_agg_enable = 0;/* 0:disable (estabilidad USB) */
 module_param(rtw_dynamic_agg_enable, int, 0644);
 
 /* set log level when inserting driver module, default log level is _DRV_INFO_ = 4,
@@ -921,7 +921,7 @@ module_param(rtw_mcc_phydm_offload, int, 0644);
 #ifdef CONFIG_RTW_NAPI
 /*following setting should define NAPI in Makefile
 enable napi only = 1, disable napi = 0*/
-int rtw_en_napi = 1;
+int rtw_en_napi = 0;/* 0:disable (estabilidad USB) */
 module_param(rtw_en_napi, int, 0644);
 #ifdef CONFIG_RTW_NAPI_DYNAMIC
 int rtw_napi_threshold = 100; /* unit: Mbps */

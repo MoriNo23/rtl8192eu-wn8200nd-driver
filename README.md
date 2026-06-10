@@ -49,12 +49,13 @@ https://github.com/MoriNo23/rtl8192eu-linux
 
 ### Módulos que disminuyen CPU (Modules that reduce CPU usage):
 - `rtw_low_power` - Modo bajo consumo → Liberar para CPU
+- `rtw_dynamic_agg_enable` - 0 (hardcodeado en source)
 - `rtw_smart_ps` - Power Save → Liberar para CPU
 - `rtw_lps_level` - Nivel LPS → Liberar para CPU
 - `rtw_ips_mode` - Modo IPS → Liberar para CPU
 - `rtw_btcoex_enable` - Coexistencia BT → Liberar si no usas BT
-- `rtw_usb_rxagg_mode` - Agregación USB → Liberar si no usas USB
-- `rtw_en_napi` - NAPI → Liberar si no usas streaming
+| `rtw_usb_rxagg_mode` | 0 - Agregación USB → Liberar si no usas USB (hardcodeado a 0 en source)
+| `rtw_en_napi` | 0 - NAPI → Liberar si no usas streaming (hardcodeado a 0 en source)
 - `rtw_en_gro` - Agregación GRO → Liberar si no usas streaming
 
 ### Para liberar módulos (e.g., laptop sin BT/USB):
