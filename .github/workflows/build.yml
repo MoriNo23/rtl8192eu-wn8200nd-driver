@@ -40,9 +40,16 @@ jobs:
             exit 1
           fi
 
-      - name: Upload module
+      - name: Upload module (non-blocking)
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: rtl8192eu-module
           path: 8192eu.ko
           compression-level: 9
+
+      - name: Build result
+        run: |
+          echo "✅ Build completado exitosamente"
+          echo "Kernel: $(uname -r)"
+          ls -lh 8192eu.ko
