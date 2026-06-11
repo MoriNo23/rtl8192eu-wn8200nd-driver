@@ -1,0 +1,13 @@
+Function: rtw_set_ps_mode
+
+**Function Purpose:** This function (`rtw_set_ps_mode`) is the central power save mode state machine for the Linux driver. It transitions the adapter between power states (Active, LPS, LPS_PG, WOWLAN, etc.), coordinates with firmware via reserved page downloads (`rtw_set_ps_rsvd_page`), configures beacon antenna modes, handles smart PS (WMM-PS/U-APSD), and manages LPS PG (Power Gating) hardware registers. It acts as the policy layer that sequences HAL operations for each power state transition.
+
+**Windows vs Linux Differences:** Fundamental architectural divergence. Windows uses NDIS 6.x power management (`NdisMIdleNotification*`, `NdisMIdleNotificationConfirm`) where the OS drives idle transitions and the miniport responds. Linux uses a driver-internal policy (`pwrctrl_priv`) with runtime PM, WoWLAN suspend/resume callbacks, and explicit `rtw_set_ps_mode` calls from multiple subsystems (mlme, TDLS, P2P, LPS timers). The Windows binary's `HalSetBeamforming*8822B` strings confirm chip-specific HALs (8822B ≠ 8192EU), and NDIS PM callbacks have no 1:1 mapping in this Linux function.
+
+**Backport Candidate:** **No**
+
+**Reason:** The function is a policy orchestrator, not a hardware algorithm. Its logic is tied to Linux kernel PM subsystems (runtime PM, WoWLAN, cfg80211), lock hierarchies (`_irqL`), and the driver's internal `pwrctrl_priv` state machine. The Windows equivalent lives in NDIS miniport handlers (`MiniportIdleNotification`, `MiniportWakeHandler`) and firmware command packing—completely different control flow, synchronization, and OS contracts. The beamforming strings in the binary are for 8822B MU-MIMO sounding, irrelevant to 8192EU's SU-MIMO capabilities.
+
+**Expected Impact:** N/A — backporting would require rewriting the entire PM subsystem integration.
+
+**Difficulty:** High (architectural mismatch, not a portable algorithm).
