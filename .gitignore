@@ -1,6 +1,7 @@
 # Build artifacts
 *.o
 *.ko
+*.ko.xz
 *.mod
 *.mod.c
 *.mod.o
@@ -8,6 +9,21 @@
 *.symvers
 Module.symvers
 modules.order
+Module.markers
+*.markers
+.*.cmd
+.*.o.cmd
+.*.ko.cmd
+.*.mod.cmd
+
+# IDE
+.vscode/
+*.swp
+*.swo
 
 # Agent config (local only)
 AGENTS.md
+
+# Windows binaries
+*.exe
+*.dll
