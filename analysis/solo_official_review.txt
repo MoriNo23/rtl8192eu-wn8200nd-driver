@@ -1,0 +1,212 @@
+Revisión de archivos SOLO_OFFICIAL
+Total: 68
+IGNORAR: 26
+REVISAR: 42
+INCORPORAR: 0
+
+================================================================================
+
+REVISAR: core/rtw_ioctl_rtl.c
+  Razón: Archivo de código con funciones
+
+REVISAR: core/rtw_mp_ioctl.c
+  Razón: Archivo de código con funciones
+
+IGNORAR: hal/btc/HalBtc8188c2Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8188c2Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8192d2Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8192d2Ant.h
+  Razón: Archivo BTC para otro chipset
+
+REVISAR: hal/btc/HalBtc8192e1Ant.c
+  Razón: Archivo BTC relevante para 8192E
+
+REVISAR: hal/btc/HalBtc8192e1Ant.h
+  Razón: Archivo BTC relevante para 8192E
+
+REVISAR: hal/btc/HalBtc8192e2Ant.c
+  Razón: Archivo BTC relevante para 8192E
+
+REVISAR: hal/btc/HalBtc8192e2Ant.h
+  Razón: Archivo BTC relevante para 8192E
+
+IGNORAR: hal/btc/HalBtc8703b1Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8703b1Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8723a1Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8723a1Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8723a2Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8723a2Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8723b1Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8723b1Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8723b2Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8723b2Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8812a1Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8812a1Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8812a2Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8812a2Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8821a1Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8821a1Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8821a2Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8821a2Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8821aCsr2Ant.c
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtc8821aCsr2Ant.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/HalBtcOutSrc.h
+  Razón: Archivo BTC para otro chipset
+
+IGNORAR: hal/btc/Mp_Precomp.h
+  Razón: Archivo BTC para otro chipset
+
+REVISAR: hal/phydm/halphyrf_ap.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/halphyrf_ap.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/halphyrf_ce.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/halphyrf_ce.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/halphyrf_win.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/halphyrf_win.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/phydm_acs.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/phydm_acs.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/phydm_dynamicbbpowersaving.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/phydm_dynamicbbpowersaving.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/phydm_edcaturbocheck.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/phydm_edcaturbocheck.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/phydm_powertracking_ap.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/phydm_powertracking_ap.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/phydm_powertracking_ce.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/phydm_powertracking_ce.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/phydm_powertracking_win.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/phydm_powertracking_win.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/phydm_rxhp.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/phydm_rxhp.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/rtchnlplan.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/rtchnlplan.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/rtl8192e/halhwimg8192e_fw.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/rtl8192e/halhwimg8192e_fw.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/rtl8192e/halphyrf_8192e_ap.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/rtl8192e/halphyrf_8192e_ap.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/rtl8192e/halphyrf_8192e_ce.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/rtl8192e/halphyrf_8192e_ce.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/rtl8192e/halphyrf_8192e_win.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/rtl8192e/halphyrf_8192e_win.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: hal/phydm/txbf/haltxbf8821b.c
+  Razón: Archivo de código con funciones
+
+REVISAR: hal/phydm/txbf/haltxbf8821b.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: include/mp_custom_oid.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: include/rtw_ioctl_rtl.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: include/rtw_mp_ioctl.h
+  Razón: Archivo header con structs/constantes HAL
+
+REVISAR: include/rtw_wifi_regd.h
+  Razón: Archivo header con structs/constantes HAL
+
