@@ -263,7 +263,21 @@ struct reg_protocol_wt {
 #endif
 
 #ifdef CONFIG_USB_HCI
-#define MAX_CONTINUAL_IO_ERR 30  /* Aumentado de 10 a 30 para mayor tolerancia en USB 2.0 */
+/*
+ * [PATCH optimization-wn8200nd] MAX_CONTINUAL_IO_ERR = 80
+ *
+ * Motivo: Con rtw_usb_rxagg_mode=0 y rtw_en_napi=0, cada paquete individual
+ * genera un error USB separado durante el silencio de radio provocado por un
+ * cambio de canal del router (típicamente 200-500ms en 2.4GHz).
+ * Con el valor anterior (30), el driver alcanzaba surprise_removed en ~300ms,
+ * matando la interfaz por un evento normal de red.
+ *
+ * Con 80: da ~800ms de tolerancia antes de declarar el dispositivo muerto,
+ * cubriendo la peor ventana de channel switching observada.
+ * Una desconexión USB física real genera errores mucho más rápido (< 50ms),
+ * por lo que la detección de fallo genuino no se ve afectada.
+ */
+#define MAX_CONTINUAL_IO_ERR 80
 #endif
 
 #ifdef CONFIG_SDIO_HCI

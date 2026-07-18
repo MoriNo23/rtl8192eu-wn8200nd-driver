@@ -12470,9 +12470,59 @@ void linked_status_chk(_adapter *padapter, u8 from_timer)
 
 	if (padapter->registrypriv.mp_mode == _TRUE)
 		return;
-		
+
 	if (check_fwstate(pmlmepriv, WIFI_CSA_UPDATE_BEACON))
 		return;
+
+	/*
+	 * [PATCH optimization-wn8200nd] Watchdog WIFI_UNDER_SURVEY atascado
+	 *
+	 * Problema: Al cambiar de canal el router, el driver entra en WIFI_UNDER_SURVEY
+	 * para re-escanear. Si el Beacon del nuevo canal no llega a tiempo (posible
+	 * con rtw_usb_rxagg_mode=0 donde no hay buffering), la máquina de estados
+	 * nunca sale del survey y el adaptador queda congelado de forma silenciosa.
+	 *
+	 * Solución: Si el scan lleva más de RTW_SURVEY_STUCK_MS ms sin completarse
+	 * (medido con jiffies), se activa scan_abort para que survey_timer_hdl
+	 * fuerze la terminación limpia en su próxima ejecución.
+	 *
+	 * RTW_SURVEY_STUCK_MS = 5000ms: cubre la peor ventana de channel switching
+	 * observada en 2.4GHz con el RTL8192EU por USB 2.0.
+	 * No afecta scans normales (duran < 3s), ni modifica flags de conexión.
+	 */
+#define RTW_SURVEY_STUCK_MS 5000
+	if (rtw_mi_check_fwstate(padapter, WIFI_UNDER_SURVEY)) {
+		if (pmlmeext->scan_abort == _FALSE &&
+		    mlmeext_scan_state(pmlmeext) > SCAN_DISABLE) {
+			unsigned long scan_ms =
+				rtw_get_passing_time_ms(pmlmepriv->scan_start_time);
+			if (scan_ms > RTW_SURVEY_STUCK_MS) {
+				RTW_INFO("[PATCH] WIFI_UNDER_SURVEY atascado %lums > %dms, "
+					 "forzando scan_abort\n",
+					 scan_ms, RTW_SURVEY_STUCK_MS);
+				pmlmeext->scan_abort = _TRUE;
+
+				/*
+				 * [PATCH optimization-wn8200nd] Guarida final contra
+				 * flag WIFI_UNDER_SURVEY pegado.
+				 *
+				 * scan_abort=TRUE solo acelera el fin del scan UNA VEZ
+				 * que survey_timer_hdl fire y encue CMD_SITE_SURVEY.
+				 * Pero si ese timer no se ejecuta (h2c colgado durante
+				 * channel switch, o el timer fue cancelado), el flag
+				 * nunca se limpia y el adaptador queda congelado.
+				 *
+				 * Re-armamos scan_to_timer a 50ms: rtw_scan_timeout_handler
+				 * (rtw_mlme.c:3666) es el único path que llama a
+				 * _clr_fwstate_(pmlmepriv, WIFI_UNDER_SURVEY) de forma
+				 * incondicional y cancela el timer correctamente. Esto
+				 * garantiza la limpieza del estado aunque el flujo normal
+				 * de survey haya muerto.
+				 */
+				mlme_set_scan_to_timer(pmlmepriv, 50);
+			}
+		}
+	}
 
 	if (is_client_associated_to_ap(padapter)) {
 		/* linked infrastructure client mode */

@@ -519,8 +519,18 @@ static void usb_write_port_complete(struct urb *purb, struct pt_regs *regs)
 	} else {
 		RTW_INFO("###=> urb_write_port_complete status(%d)\n", purb->status);
 		if ((purb->status == -EPIPE) || (purb->status == -EPROTO)) {
-			/* usb_clear_halt(pusbdev, purb->pipe);	 */
-			/* msleep(10); */
+			/*
+			 * [PATCH optimization-wn8200nd] TX error transitorio no es surprise_removed
+			 *
+			 * Durante un channel switch del router (200-500ms en 2.4GHz) el
+			 * adaptador queda "sordo" y el USB escupe -EPIPE/-EPROTO de forma
+			 * transitoria. Estos errores NO indican una desconexión física real,
+			 * solo un silencio de radio momentáneo. En lugar de declarar
+			 * surprise_removed (que mata la interfaz hasta modprobe cycle),
+			 * reseteamos el contador de errores continuos y reintentamos el envío.
+			 * El hardware se re-sincroniza solo en el nuevo canal.
+			 */
+			rtw_reset_continual_io_error(adapter_to_dvobj(padapter));
 			sreset_set_wifi_error_status(padapter, USB_WRITE_PORT_FAIL);
 		} else if (purb->status == -EINPROGRESS) {
 			goto check_completion;
@@ -538,9 +548,16 @@ static void usb_write_port_complete(struct urb *purb, struct pt_regs *regs)
 
 			goto check_completion;
 		} else {
-			rtw_set_surprise_removed(padapter);
-			RTW_INFO("bSurpriseRemoved=TRUE\n");
-
+			/*
+			 * [PATCH optimization-wn8200nd] Solo status completamente
+			 * desconocido (no -EPIPE/-EPROTO/-ESHUTDOWN) llega aquí.
+			 * Si alcanza el umbral de errores continuos, entonces sí
+			 * es una desconexión genuina.
+			 */
+			if (rtw_inc_and_chk_continual_io_error(adapter_to_dvobj(padapter)) == _TRUE) {
+				rtw_set_surprise_removed(padapter);
+				RTW_INFO("bSurpriseRemoved=TRUE (TX unknown status %d)\n", purb->status);
+			}
 			goto check_completion;
 		}
 	}
