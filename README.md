@@ -39,9 +39,12 @@ compilar**. Así el DKMS nunca usa una copia olvidada; cuando el kernel cambie, 
 usa tus features nuevas.
 
 **Flujo al tocar código:**
-1. Editás código en `driver/`
-2. `sudo ./wifi_manager.sh` → elegís `2) Actualizar`
+1. Editás código en `driver/` (NO hace falta compilar a mano — el script compila solo)
+2. `sudo ./wifi_manager.sh` → elegís `2) Actualizar` (borra lo viejo + compila tu build reciente + reinstala)
 3. Pusheás → CI confirma verde
+
+> El modo Instalar/Actualizar compila automáticamente `driver/8192eu.ko` (make clean + make all).
+> No compilés manualmente antes.
 
 ---
 
@@ -67,8 +70,11 @@ Menú:
 ```
 
 El modo Instalar/Actualizar hace: descarga módulo → borra `/usr/src/rtl8192eu-1.0` y
-`/var/lib/dkms/rtl8192eu` → compila `driver/8192eu.ko` → copia tu repo a `/usr/src` (source fresco)
-→ `dkms add` + `dkms install` → `depmod -a` → `modprobe 8192eu`.
+`/var/lib/dkms/rtl8192eu` → **compila `driver/8192eu.ko` (automático)** → copia tu repo a `/usr/src`
+(source fresco) → `dkms add` + `dkms install` → `depmod -a` → `modprobe 8192eu`.
+
+> No hace falta correr `make` a mano: el script compila solo. Solo editá el código y elegí
+> `2) Actualizar`.
 
 **Auto-rebuild en update de kernel:** DKMS recompila solo cuando hay nuevo kernel, usando el
 source que copiaste en `/usr/src` (que ya tiene tus features). No recompila en cada boot.
