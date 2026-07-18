@@ -25,13 +25,13 @@ jobs:
 
       - name: Verify module
         run: |
-          if [ ! -f 8192eu.ko ]; then
-            echo "ERROR: 8192eu.ko no se generó"
+          if [ ! -f driver/8192eu.ko ]; then
+            echo "ERROR: driver/8192eu.ko no se generó"
             exit 1
           fi
-          modinfo 8192eu.ko
+          modinfo driver/8192eu.ko
           echo "=== PARÁMETROS COMPILADOS ==="
-          modinfo -p 8192eu.ko | grep -E "rtw_enusbss|rtw_en_napi|rtw_usb_rxagg|rtw_dynamic_agg"
+          modinfo -p driver/8192eu.ko | grep -E "rtw_enusbss|rtw_en_napi|rtw_usb_rxagg|rtw_dynamic_agg"
 
       - name: Package and create release
         env:
@@ -42,9 +42,9 @@ jobs:
           TAG="build-$SHA-kernel-$KERNEL"
 
           # Comprimir .ko con nombre descriptivo
-          gzip -9 -k 8192eu.ko
+          gzip -9 -k driver/8192eu.ko
           FILENAME="rtl8192eu-$SHA-$KERNEL.ko.gz"
-          mv 8192eu.ko.gz "$FILENAME"
+          mv driver/8192eu.ko.gz "$FILENAME"
 
           # Notas del release
           cat > /tmp/release-notes.md <<- EOM
