@@ -18,7 +18,7 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 DRIVER_DIR="$REPO_DIR/driver"
 KO_SRC="$DRIVER_DIR/8192eu.ko"
 PKG="rtl8192eu"
-VER="1.0"
+VER="1.6"
 USRSRC="/usr/src/$PKG-$VER"
 DKMSBUILD="/var/lib/dkms/$PKG"
 KVER=$(uname -r)
@@ -61,7 +61,7 @@ do_install() {
   echo "blacklist rtl8xxxu" | sudo tee /etc/modprobe.d/blacklist-rtl8xxxu.conf >/dev/null
   echo "  -> Registrando en DKMS y compilando contra kernel $KVER..."
   sudo dkms add -m "$PKG" -v "$VER"
-  sudo dkms install -m "$PKG" -v "$VER"
+  sudo dkms install -m "$PKG" -v "$VER" --force
   sudo depmod -a
   echo "  -> Cargando módulo..."
   sudo modprobe 8192eu

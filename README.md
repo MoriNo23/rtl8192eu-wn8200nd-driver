@@ -69,9 +69,15 @@ Menú:
 4) Salir
 ```
 
-El modo Instalar/Actualizar hace: descarga módulo → borra `/usr/src/rtl8192eu-1.0` y
+El modo Instalar/Actualizar hace: descarga módulo → borra `/usr/src/rtl8192eu-$VER` y
 `/var/lib/dkms/rtl8192eu` → **compila `driver/8192eu.ko` (automático)** → copia tu repo a `/usr/src`
-(source fresco) → `dkms add` + `dkms install` → `depmod -a` → `modprobe 8192eu`.
+(source fresco, carpeta `rtl8192eu-$VER`) → `dkms add` + `dkms install --force` → `depmod -a` → `modprobe 8192eu`.
+
+> **Nota técnica (fix de build):** el `dkms.conf` tiene `BUILT_MODULE_LOCATION[0]="driver/"` porque el
+> Makefile forwarding delega a `driver/`, y el `.ko` queda en `build/driver/8192eu.ko` (no en la raíz del
+> build). Sin eso, DKMS reportaba "Build failed" pese a compilar bien (exit 0). El `dkms install` usa
+> `--force` para pisar el `.ko` previo en `/lib/modules`.
+> `VER` actual = `1.6` (subirla no rompe el workflow: el script borra `/usr/src` y `/var/lib/dkms` completos).
 
 > No hace falta correr `make` a mano: el script compila solo. Solo editá el código y elegí
 > `2) Actualizar`.
