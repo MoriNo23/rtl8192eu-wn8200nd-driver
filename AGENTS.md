@@ -6,11 +6,17 @@
 - Fork del repo original `rtl8192eu-linux`, rama `5.11.2.3`
 - Adaptador: TL-WN8200ND(UN) V3.0 (chipset RTL8192EU) — DVD oficial es V2.0
 
-## Build Flags Especiales
+## Arquitectura
+Sistema target: netbook ~2009, Intel Sandy Bridge, RAM limitada.
+Driver WiFi USB: TL-WN8200ND(UN) V3.0 (RTL8192EU). DVD oficial V2.0.
+
+## Build Flags Especiales (driver/Makefile)
 | Flag | Valor | Razón |
 |------|-------|-------|
 | `-O3` | habilitado | Optimización agresiva para gaming |
-| `CONFIG_RTW_NAPI_DYNAMIC` | sí | Desactiva NAPI en bajo throughput (<100 Mbps) para ahorrar CPU |
+| `CONFIG_RTW_DEBUG` | y | Logs debug activos (dmesg) |
+| `CONFIG_PROC_DEBUG` | y | /proc/net/rtl8192eu/ interfaces |
+| `CONFIG_RTW_NAPI_DYNAMIC` | sí | Desactiva NAPI en bajo throughput (<100 Mbps) |
 | `CONFIG_RTW_GRO` | n | Desactivado para reducir latencia |
 | `CONFIG_AP_MODE` | n | No usado |
 | `CONFIG_P2P` | n | No usado |
@@ -20,6 +26,8 @@
 | `CONFIG_LPS_MODE` | 0 | Sin ahorro energía |
 | `CONFIG_ICMP_VOQ` | y | Prioriza ICMP para gaming |
 | `CONFIG_IP_R_MONITOR` | y | Prioriza ARP/high rate |
+| `CONFIG_RTW_ADAPTIVITY_EN` | enable | EDCCA adaptivity activo |
+| `CONFIG_RTW_ADAPTIVITY_MODE` | carrier_sense | Modo carrier sense |
 
 ## Parámetros hardcodeados (source)
 - `rtw_en_napi = 0` — NAPI desactivado (estabilidad USB)
@@ -31,23 +39,90 @@
 - `rtw_antdiv_cfg=1` — antenna diversity forzada
 
 ## USB Stability
-- `MAX_CONTINUAL_IO_ERR=30` (vs 10 original)
-- USB autosuspend desactivado
+- `MAX_CONTINUAL_IO_ERR=80` (era 10→30→80, evita surprise_removed en channel switch)
+- USB autosuspend desactivado (`rtw_enusbss=0`)
+
+## EDCCA / Adaptivity
+
+### Parámetros runtime (en /etc/modprobe.d/8192eu.conf)
+| Parámetro | Valor | Efecto |
+|-----------|-------|--------|
+| `rtw_adaptivity_th_l2h_ini` | 15 | Threshold L2H inicial |
+| `rtw_adaptivity_th_edcca_hl_diff` | 5 | Diferencia H-L EDCCA |
+| `rtw_rxgain_offset_2g` | 4 | Atenuación LNA 2.4GHz |
+| `rtw_notch_filter` | 1 | Filtro notch |
+| `rtw_smart_ps` | 0 | Sin ahorro energía |
+
+### Init override (parche aplicado)
+`phydm_set_l2h_th_ini_carrier_sense()` en `driver/hal/phydm/phydm_adaptivity.c:350`
+forzaba `dm->th_l2h_ini = 10` siempre para IC 11N en carrier_sense mode,
+pisoteando el module_param. **Parche:** guard `if (dm->th_l2h_ini != 0) return;`
+respeta el valor si fue configurado via modprobe.
+srcversion post-parche: D4329188BC16E20CC78F085.
+
+### EDCCA threshold calculation runtime (phydm_edcca_thre_calc)
+RTL8192E es ODM_IC_PWDB_EDCCA. En adapt mode:
+```
+l2h_dyn_min = th_l2h_ini + igi_target  (igi_target=0x32=50)
+th_l2h = min(igi, l2h_dyn_min)
+th_h2l = th_l2h - th_edcca_hl_diff
+```
+Con th_l2h_ini=15, igi~0x35: l2h_dyn_min=65, th_l2h=IGI(~53), th_h2l=48.
+En NORMAL mode (adaptivity disabled): `th_l2h = max(igi + TH_L2H_DIFF_IGI, EDCCA_TH_L2H_LB)`.
+
+## Debug (DBG_ADPTVTY)
+Activar logs EDCCA en dmesg via proc:
+```
+echo "dbg 13 1" | sudo tee /proc/net/rtl8192eu/wn8200nd/odm/cmd
+```
+Bit 13 = DBG_ADPTVTY (0x2000). Se pierde al recargar módulo.
+Comandos phydm_debug disponibles:
+- `dbg 100` — mostrar componentes debug activos
+- `dbg <N> 1` — habilitar bit N
+- `dbg <N> 2` — deshabilitar bit N
+- `dbg 101` — deshabilitar todos
+
+Logs cada ~2s muestran:
+```
+[PHYDM] mode = CARRIER SENSE
+[PHYDM] th_l2h_ini = 15, th_edcca_hl_diff = 5
+[PHYDM] IGI = 0x35, th_l2h = -47 dBm, th_h2l = -52 dBm
+```
+
+## Procfs debug
+`/proc/net/rtl8192eu/wn8200nd/odm/`:
+- `adaptivity` — read/write th_l2h_ini y th_edcca_hl_diff (write: formato `0xNN MM`, hex+decimal)
+- `cmd` — comandos phydm_debug (formato `dbg 13 1`)
+- `/proc/net/rtl8192eu/wn8200nd/rx_signal` — RSSI, señal por path RF
+- `/proc/net/rtl8192eu/wn8200nd/rx_stat` — estadísticas RX
+- `/proc/net/rtl8192eu/wn8200nd/survey_info` — APs visibles por canal
+
+Sysfs module params: `/sys/module/8192eu/parameters/`
+⚠️ Escribir a sysfs NO propaga a registry_priv ni a dm->edcca_mode.
+Son variables separadas: module_param se copia a registry_priv solo al init.
 
 ## DKMS
 - Source: `/usr/src/rtl8192eu-1.0/`
-- Instalado para kernels: 6.12.85, .86, .88, .90
-- Instalación: `sudo ./install_wifi.sh`
+- Instalación principal: `sudo ./wifi_manager.sh` (TUI interactivo)
+- Instalación manual (post-compilación, evita DKMS): `sudo ./install_manual.sh`
+  Elimina `.ko.xz`/`.ko.zst` de `updates/dkms/` antes de cargar el módulo compilado.
 - Parámetros configurables: `/etc/modprobe.d/8192eu.conf`
+
+## Monitoreo pasivo
+`monitoring/rx_drop_watchdog.sh` vía cron cada 30min:
+- Lee rx_dropped/rx_packets de sysfs, compara con último estado
+- Escribe CSV en `monitoring/rx_drop_monitor.log`
+- Filtra falsos positivos: interfaz down, sin IP/gateway, contadores reseteados
+- Solo alerta cuando drops > 0
+- Cron (Hermes): rx-drop-watchdog, job_id 1db902a53a75
 
 ## Parámetros Runtime Ajustables
 ```
-rtw_adaptivity_th_l2h_ini  # threshold L2H adaptivity (default 0)
-rtw_adaptivity_th_edcca_hl_diff  # diff H-L EDCCA (default 0)
-rtw_napi_threshold  # Mbps threshold for dynamic NAPI (default 100)
-rtw_ampdu_factor  # AMPDU aggregation (default 7)
+rtw_adaptivity_th_l2h_ini      # threshold L2H adaptivity (default 0)
+rtw_adaptivity_th_edcca_hl_diff  # diff H-L EDCCA (default 0, override->7 si 0)
+rtw_rxgain_offset_2g             # atenuación LNA en 2.4GHz (default 0, nuestro 4)
+rtw_notch_filter                 # filtro notch (default 0, nuestro 1)
+rtw_smart_ps                     # PS inteligente (default 2, nuestro 0)
+rtw_napi_threshold               # Mbps threshold para dynamic NAPI (default 100)
+rtw_ampdu_factor                 # AMPDU aggregation (default 7)
 ```
-
-## Arquitectura
-Sistema target: netbook ~2009, Intel Sandy Bridge, RAM limitada.
-Driver WiFi USB: TL-WN8200ND(UN) V3.0 (RTL8192EU). DVD oficial V2.0.

@@ -108,15 +108,54 @@ cat /sys/module/8192eu/parameters/rtw_enusbss   # debe mostrar: 0
 | `rtw_antdiv_cfg` | 1 | antenna diversity forzada |
 | `rtw_TxBBSwing_2G` | 255 | potencia máxima 2.4GHz |
 
-### Parámetros runtime (modprobe)
+## Parámetros runtime EDCCA / adaptivity
+
+Además de los parámetros USB, el driver tiene parámetros runtime para EDCCA
+configurables en `/etc/modprobe.d/8192eu.conf`:
+
 | Parámetro | Default | Descripción |
 |-----------|---------|-------------|
-| `rtw_enusbss` | 0 | USB autosuspend |
-| `rtw_en_napi` | 0 | NAPI |
-| `rtw_usb_rxagg_mode` | 0 | Agregación USB RX |
-| `rtw_dynamic_agg_enable` | 0 | Agregación dinámica |
-| `rtw_trx_path_bmp` | 0x33 | Máscara 2×2 MIMO |
-| `rtw_antdiv_cfg` | 1 | Diversidad de antena |
+| `rtw_adaptivity_th_l2h_ini` | 0 | Threshold L2H (modprobe: 15) |
+| `rtw_adaptivity_th_edcca_hl_diff` | 0 | Diferencia H-L (modprobe: 5, si 0 se override a 7) |
+| `rtw_rxgain_offset_2g` | 0 | Atenuación LNA 2.4GHz (modprobe: 4) |
+| `rtw_notch_filter` | 0 | Filtro notch (modprobe: 1) |
+| `rtw_smart_ps` | 2 | Ahorro energía (modprobe: 0) |
+
+### Init override (parche 2026-07-29)
+`phydm_set_l2h_th_ini_carrier_sense()` en `driver/hal/phydm/phydm_adaptivity.c:350`
+forzaba `th_l2h_ini = 10` siempre para RTL8192EU en carrier_sense mode,
+pisoteando el module_param 15. **Parche:** guard `if (th_l2h_ini != 0) return;`
+respeta el valor configurado. Comportamiento igual al branch no-carrier_sense
+(línea 703) que ya tenía este guard.
+
+### Debug EDCCA en dmesg
+```bash
+echo "dbg 13 1" | sudo tee /proc/net/rtl8192eu/wn8200nd/odm/cmd
+```
+Bit 13 = DBG_ADPTVTY (0x2000). Muestra logs cada ~2s:
+```
+[PHYDM] phydm_adaptivity ====>
+[PHYDM] mode = CARRIER SENSE, debug_mode = 0
+[PHYDM] th_l2h_ini = 15, th_edcca_hl_diff = 5
+[PHYDM] IGI = 0x35, th_l2h = -47 dBm, th_h2l = -52 dBm
+```
+Ver en tiempo real: `sudo dmesg -w | grep -E 'ADPTVTY|th_l2h.*dBm'`
+
+Otros comandos phydm_debug:
+```bash
+echo "dbg 100" | sudo tee .../odm/cmd   # mostrar debug components activos
+echo "dbg 13 2" | sudo tee .../odm/cmd   # deshabilitar
+echo "dbg 101" | sudo tee .../odm/cmd    # deshabilitar todos
+```
+
+⚠️ Escribir a `/sys/module/8192eu/parameters/rtw_adaptivity_en`
+**no propaga** a registry_priv. Usar `odm/cmd` en su lugar.
+
+### Monitoreo pasivo rx_dropped
+`monitoring/rx_drop_watchdog.sh` vía cron cada 30min (Hermes cron
+`rx-drop-watchdog`). Lee rx_dropped/rx_packets de sysfs, compara con
+estado previo, escribe CSV en `monitoring/rx_drop_monitor.log`.
+Filtra falsos positivos: interfaz DOWN, sin IP/gateway, contadores reseteados.
 
 ---
 
@@ -144,8 +183,12 @@ rtl8192eu-linux/
 │   └── 8192eu.ko         # Módulo compilado (generado por make)
 ├── docs/                 # BACKPORT_REPORT, DRIVER_BIBLE, BUGS.md, notes/
 ├── research/             # Ingeniería inversa y análisis
+├── monitoring/           # Monitoreo pasivo rx_dropped (watchdog + logs)
+│   ├── rx_drop_watchdog.sh
+│   └── rx_drop_monitor.log
+├── install_manual.sh     # Instalación manual post-compilación (anti-DKMS)
 ├── dkms.conf             # PACKAGE_NAME=rtl8192eu (matchea con wifi_manager.sh)
-├── wifi_manager.sh       # ÚNICO script: TUI instalar/actualizar/desinstalar
+├── wifi_manager.sh       # TUI instalar/actualizar/desinstalar (recomendado)
 ├── AGENTS.md             # Config del driver para agentes
 └── README.md
 ```
