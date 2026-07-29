@@ -111,7 +111,7 @@ Son variables separadas: module_param se copia a registry_priv solo al init.
 ## Monitoreo pasivo
 `monitoring/rx_drop_watchdog.sh` vía cron cada 30min:
 - Lee rx_dropped/rx_packets de sysfs, compara con último estado
-- Escribe CSV en `monitoring/rx_drop_monitor.log`
+- Escribe CSV en `monitoring/rx_drop_monitor_YYYY-MM-DD_HHMMSS.csv` (uno por ejecución)
 - Filtra falsos positivos: interfaz down, sin IP/gateway, contadores reseteados
 - Solo alerta cuando drops > 0
 - Cron (Hermes): rx-drop-watchdog, job_id 1db902a53a75

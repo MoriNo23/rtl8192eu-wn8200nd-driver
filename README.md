@@ -154,8 +154,9 @@ echo "dbg 101" | sudo tee .../odm/cmd    # deshabilitar todos
 ### Monitoreo pasivo rx_dropped
 `monitoring/rx_drop_watchdog.sh` vía cron cada 30min (Hermes cron
 `rx-drop-watchdog`). Lee rx_dropped/rx_packets de sysfs, compara con
-estado previo, escribe CSV en `monitoring/rx_drop_monitor.log`.
-Filtra falsos positivos: interfaz DOWN, sin IP/gateway, contadores reseteados.
+estado previo, escribe CSV en `monitoring/rx_drop_monitor_YYYY-MM-DD_HHMMSS.csv`
+(un archivo por ejecucion). Filtra falsos positivos: interfaz DOWN,
+sin IP/gateway, contadores reseteados.
 
 ---
 
@@ -183,9 +184,9 @@ rtl8192eu-linux/
 │   └── 8192eu.ko         # Módulo compilado (generado por make)
 ├── docs/                 # BACKPORT_REPORT, DRIVER_BIBLE, BUGS.md, notes/
 ├── research/             # Ingeniería inversa y análisis
-├── monitoring/           # Monitoreo pasivo rx_dropped (watchdog + logs)
+├── monitoring/           # Monitoreo pasivo rx_dropped (watchdog + logs por fecha)
 │   ├── rx_drop_watchdog.sh
-│   └── rx_drop_monitor.log
+│   └── rx_drop_monitor_*.csv
 ├── install_manual.sh     # Instalación manual post-compilación (anti-DKMS)
 ├── dkms.conf             # PACKAGE_NAME=rtl8192eu (matchea con wifi_manager.sh)
 ├── wifi_manager.sh       # TUI instalar/actualizar/desinstalar (recomendado)
