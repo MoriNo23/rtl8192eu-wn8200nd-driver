@@ -351,6 +351,9 @@ static void phydm_set_l2h_th_ini_carrier_sense(void *dm_void)
 {
 	struct dm_struct *dm = (struct dm_struct *)dm_void;
 
+	if (dm->th_l2h_ini != 0)
+		return; /* respetar config del usuario via module_param */
+
 	if (dm->support_ic_type & ODM_IC_JGR3_SERIES)
 		dm->th_l2h_ini = 60; /*@ -50dBm*/
 	else
