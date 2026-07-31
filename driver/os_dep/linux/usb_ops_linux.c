@@ -13,11 +13,65 @@
  *
  *****************************************************************************/
 #define _USB_OPS_LINUX_C_
-
 #include <drv_types.h>
 #include <hal_data.h>
 #include <rtw_sreset.h>
+#include <linux/workqueue.h>
+	/* === URB STALL RECOVERY PATCH ===
+	 * EPIPE (endpoint stall) recovery: clear halt via workqueue + resubmit.
+	 * usb_clear_halt() duerme (control transfer), no se puede llamar desde
+	 * callback URB (contexto softirq) — se delega a un workqueue.
+	 * Si clear_halt falla o el error persiste, el contador continual_io_error
+	 * sigue subiendo y el driver escala a surprise_removed (driver restart).
+	 * Single-adapter assumption: IFACE_NUMBER=1, no CONFIG_CONCURRENT_MODE.
+	 */
+	static struct work_struct rtw_ep_reset_work;
+	static _adapter *rtw_ep_reset_padapter;
+	static struct recv_buf *rtw_ep_reset_recvbuf;
 
+static void rtw_ep_reset_worker(struct work_struct *work)
+{
+	_adapter *padapter = rtw_ep_reset_padapter;
+	struct dvobj_priv *pdvobj;
+	struct usb_device *pusbd;
+	struct recv_priv *precvpriv;
+	unsigned int pipe;
+	int ret;
+
+	if (!padapter || !rtw_ep_reset_recvbuf)
+		return;
+
+	pdvobj = adapter_to_dvobj(padapter);
+	pusbd = pdvobj->pusbdev;
+	precvpriv = &padapter->recvpriv;
+
+	/* clear halt en bulk IN (endpoint principal de RX) */
+	pipe = usb_rcvbulkpipe(pusbd, pdvobj->RtInPipe[0]);
+	ret = usb_clear_halt(pusbd, pipe);
+	RTW_INFO("[URB-REC] clear_halt bulk IN(0x%x): ret=%d\n", pdvobj->RtInPipe[0], ret);
+
+	/* clear halt en int IN si existe */
+	if (pdvobj->RtNumInPipes > 1) {
+		pipe = usb_rcvintpipe(pusbd, pdvobj->RtInPipe[1]);
+		ret = usb_clear_halt(pusbd, pipe);
+		RTW_INFO("[URB-REC] clear_halt int IN(0x%x): ret=%d\n", pdvobj->RtInPipe[1], ret);
+	}
+
+	/* recovery exitoso → reset contador para no escalar a surprise_removed */
+	rtw_reset_continual_io_error(pdvobj);
+
+	/* re-armar RX con el recvbuf que fallo */
+	if (!RTW_CANNOT_RX(padapter)) {
+		rtw_read_port(padapter, precvpriv->ff_hwaddr, 0, (unsigned char *)rtw_ep_reset_recvbuf);
+		RTW_INFO("[URB-REC] RX re-submitted OK\n");
+	}
+}
+
+void rtw_usb_ep_reset_work_init(void)
+{
+	_init_workitem(&rtw_ep_reset_work, rtw_ep_reset_worker, NULL);
+}
+	/* === END URB STALL RECOVERY PATCH === */
 struct rtw_async_write_data {
 	u8 data[VENDOR_CMD_MAX_DATA_LEN];
 	struct usb_ctrlrequest dr;
@@ -827,8 +881,14 @@ void usb_read_port_complete(struct urb *purb, struct pt_regs *regs)
 			rtw_set_surprise_removed(padapter);
 
 		switch (purb->status) {
-		case -EINVAL:
 		case -EPIPE:
+			/* [URB-STALL-RECOVERY] endpoint stall: clear halt + resubmit */
+			RTW_INFO("###=> EPIPE (endpoint stall), scheduling clear_halt\n");
+			rtw_ep_reset_padapter = padapter;
+			rtw_ep_reset_recvbuf = precvbuf;
+			_set_workitem(&rtw_ep_reset_work);
+			break;
+		case -EINVAL:
 		case -ENODEV:
 		case -ESHUTDOWN:
 		case -ENOENT:
@@ -988,8 +1048,19 @@ void usb_read_port_complete(struct urb *purb, struct pt_regs *regs)
 			rtw_set_surprise_removed(padapter);
 
 		switch (purb->status) {
-		case -EINVAL:
 		case -EPIPE:
+			/* [URB-STALL-RECOVERY] endpoint stall: clear halt + resubmit
+			 * en vez de parar el driver. El recovery corre en workqueue
+			 * (usb_clear_halt duerme, no permitido en softirq). Si el
+			 * clear_halt falla, continual_io_error sigue subiendo y el
+			 * driver escala a surprise_removed arriba (driver restart).
+			 */
+			RTW_INFO("###=> EPIPE (endpoint stall), scheduling clear_halt\n");
+			rtw_ep_reset_padapter = padapter;
+			rtw_ep_reset_recvbuf = precvbuf;
+			_set_workitem(&rtw_ep_reset_work);
+			break;
+		case -EINVAL:
 		case -ENODEV:
 		case -ESHUTDOWN:
 		case -ENOENT:

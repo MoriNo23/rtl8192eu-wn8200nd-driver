@@ -1265,6 +1265,9 @@ static int rtw_drv_init(struct usb_interface *pusb_intf, const struct usb_device
 	/* step 0. */
 	process_spec_devid(pdid);
 
+	/* [URB-STALL-RECOVERY] init workqueue para clear_halt de endpoints */
+	rtw_usb_ep_reset_work_init();
+
 	/* Initialize dvobj_priv */
 	dvobj = usb_dvobj_init(pusb_intf, pdid);
 	if (dvobj == NULL) {
