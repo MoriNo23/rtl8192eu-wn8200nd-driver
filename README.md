@@ -85,6 +85,20 @@ El modo Instalar/Actualizar hace: descarga módulo → borra `/usr/src/rtl8192eu
 **Auto-rebuild en update de kernel:** DKMS recompila solo cuando hay nuevo kernel, usando el
 source que copiaste en `/usr/src` (que ya tiene tus features). No recompila en cada boot.
 
+### Alternativa: install_manual.sh (v3)
+
+`sudo ./install_manual.sh` hace lo mismo de forma no interactiva (para scripts/sesiones de agente):
+
+1. **Asegura DKMS si falta**: si `dkms` está instalado pero `rtl8192eu/1.6` no está registrado,
+   sincroniza el source parcheado a `/usr/src/rtl8192eu-1.6` + `dkms add`.
+2. **Usa la vía DKMS** cuando existe (`dkms build` + `install --force` — el `.ko.xz` de
+   `updates/dkms/` tiene prioridad). Solo si dkms NO existe, hace la vía manual (copia el `.ko`
+   a `/lib/modules/$(uname -r)/kernel/...` y elimina remanentes de `updates/dkms/`).
+3. **Reinicia NetworkManager al final** (`systemctl restart NetworkManager`) — tras recargar el
+   módulo, NM no reconecta solo (fallback: `nmcli device connect wn8200nd`).
+
+Requisito: el `.ko` ya debe estar compilado (`sudo make -C driver -j$(nproc) all`).
+
 ### Verificar
 ```bash
 lsmod | grep 8192eu
@@ -187,7 +201,7 @@ rtl8192eu-linux/
 ├── monitoring/           # Monitoreo pasivo rx_dropped (watchdog + logs por fecha)
 │   ├── rx_drop_watchdog.sh
 │   └── rx_drop_monitor_*.csv
-├── install_manual.sh     # Instalación manual post-compilación (anti-DKMS)
+├── install_manual.sh     # v3: asegura DKMS si falta + recarga + reinicia NetworkManager
 ├── dkms.conf             # PACKAGE_NAME=rtl8192eu (matchea con wifi_manager.sh)
 ├── wifi_manager.sh       # TUI instalar/actualizar/desinstalar (recomendado)
 ├── AGENTS.md             # Config del driver para agentes

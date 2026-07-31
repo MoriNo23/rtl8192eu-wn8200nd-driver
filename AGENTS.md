@@ -125,11 +125,11 @@ Son variables separadas: module_param se copia a registry_priv solo al init.
 - **Kernel updates: regeneración AUTOMÁTICA** con los parches (1T1R + EDCCA + EPIPE). El .ko de DKMS
   (`updates/dkms/8192eu.ko.xz`) tiene PRIORIDAD sobre el manual.
 - Instalación principal: `sudo ./wifi_manager.sh` (TUI — hace build + copia a /usr/src + dkms add/install)
-- Instalación manual (emergencia, evita DKMS): `sudo ./install_manual.sh` —
-  elimina `.ko.xz`/`.ko.zst` de `updates/dkms/` (pisa al DKMS hasta el próximo kernel update)
-- ⚠️ Tras CUALQUIER recarga del módulo, NetworkManager NO reconecta solo:
-  `nmcli device connect wn8200nd` (o `systemctl restart NetworkManager`).
-  Script con fallback: `~/.local/bin/reload-wn8200nd-1ant`
+- `sudo ./install_manual.sh` **(v3)**: asegura DKMS si falta (sync source parcheado a /usr/src + `dkms add`),
+  usa `dkms build + install --force` si dkms existe; vía manual solo si dkms no está.
+  **SIEMPRE reinicia NetworkManager al final** (`systemctl restart NetworkManager`) —
+  NM no reconecta solo tras recargar el módulo. Fallback: `nmcli device connect wn8200nd`.
+- Script de recarga con fallback NM: `~/.local/bin/reload-wn8200nd-1ant`
 - Parámetros configurables: `/etc/modprobe.d/8192eu.conf` (EDCCA) + `/etc/modprobe.d/rtl8192eu.conf` (paths/1T1R)
 
 ## Monitoreo pasivo
