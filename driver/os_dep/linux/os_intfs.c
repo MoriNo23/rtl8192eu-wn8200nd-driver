@@ -330,7 +330,12 @@ int rtw_low_power = 0;
 int rtw_wifi_spec = 0;
 
 
-int rtw_trx_path_bmp = 0x33; /* TL-WN8200ND: force 2x2 MIMO (TX=0011, RX=0011) */
+int rtw_trx_path_bmp = 0x11; /* TL-WN8200ND: 1T1R forzado (solo antena A/path 0)
+				* 2026-07-30: conector de antena B (path RF 1) desoldado — hardware
+				* roto. Con 2x2 (0x33) el driver depende de la path muerta: RSSI
+				* arrastrado, rate RX clavado en CCK_1M, stalls de ping.
+				* 0x11 = TX path 4 + RX path 0 (solo antena A).
+				* REVERTIR a 0x33 cuando se resuelde el conector. */
 module_param(rtw_trx_path_bmp, int, 0644); /* [7:4]TX path bmp, [0:3]RX path bmp, 0: not specified */
 
 #ifdef CONFIG_SPECIAL_RF_PATH /* configure Nss/xTxR IC to 1ss/1T1R */

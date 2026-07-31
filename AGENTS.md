@@ -35,8 +35,25 @@ Driver WiFi USB: TL-WN8200ND(UN) V3.0 (RTL8192EU). DVD oficial V2.0.
 - `rtw_dynamic_agg_enable = 0` — agregación dinámica desactivada
 
 ## MIMO
-- `rtw_trx_path_bmp=0x33` — forzado 2 antenas
+- `rtw_trx_path_bmp=0x11` — **1T1R forzado (solo antena A/path 0)** — ver parche abajo
 - `rtw_antdiv_cfg=1` — antenna diversity forzada
+
+### ⚠️ Parche 1T1R (2026-07-30) — conector antena B desoldado
+El conector físico de la antena B (path RF 1) está desoldado (hardware roto, confirmado
+desarmando el adaptador). Con 2x2 (0x33) el driver dependía de la path muerta: RSSI
+arrastrado (-72/-84 dBm), rate RX clavado en CCK_1M, stalls de ping recurrentes.
+
+Cambios aplicados:
+1. **Source** — `driver/os_dep/linux/os_intfs.c:333`: default `0x33` → `0x11`
+   (TX path 4 + RX path 0 = solo antena A). srcversion: `A0A33550E9968D9FA55C846`.
+2. **Conf** — `/etc/modprobe.d/rtl8192eu.conf`: `rtw_trx_path_bmp=0x11` (override
+   redundante pero explícito). `/etc/modprobe.d/8192eu.conf` sin cambios de paths.
+
+**REVERTIR al resoldar el conector:** `0x11` → `0x33` en ambos lugares + recompilar +
+`sudo ./install_manual.sh`.
+
+Resultado: ping gateway 0% loss (antes stalls de 1-51 fallos), señal -44 dBm,
+tx bitrate 300 Mbps. Script de chequeo: `~/.local/bin/wn8200nd-antenna`.
 
 ## USB Stability
 - `MAX_CONTINUAL_IO_ERR=80` (era 10→30→80, evita surprise_removed en channel switch)
