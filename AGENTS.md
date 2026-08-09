@@ -15,7 +15,7 @@ comportamiento/optimizaciones, major para cambios estructurales. Bump → renomb
 
 ## Repo
 - Remote: `MoriNo23/rtl8192eu-wn8200nd-driver` (privado)
-- Branch: `optimization-wn8200nd` (única, default)
+- Branch: `main` (única, default)
 - Fork del repo original `rtl8192eu-wn8200nd-driver`, rama `5.11.2.3`
 - Adaptador: TL-WN8200ND(UN) V3.0 (chipset RTL8192EU) — DVD oficial es V2.0
 
