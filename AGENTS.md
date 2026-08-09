@@ -13,7 +13,7 @@ Driver WiFi USB: TL-WN8200ND(UN) V3.0 (RTL8192EU). DVD oficial V2.0.
 ## Build Flags Especiales (driver/Makefile)
 | Flag | Valor | Razón |
 |------|-------|-------|
-| `-O3` | habilitado | Optimización agresiva para gaming |
+| `-O2` | habilitado | Estándar Realtek, código más chico (mejor caché en CPU vieja). Antes -O3 (2026-08-08) |
 | `CONFIG_RTW_DEBUG` | y | Logs debug activos (dmesg) |
 | `CONFIG_PROC_DEBUG` | y | /proc/net/rtl8192eu/ interfaces |
 | `CONFIG_RTW_NAPI_DYNAMIC` | sí | Desactiva NAPI en bajo throughput (<100 Mbps) |
@@ -59,16 +59,17 @@ tx bitrate 300 Mbps. Script de chequeo: `~/.local/bin/wn8200nd-antenna`.
 - `MAX_CONTINUAL_IO_ERR=80` (era 10→30→80, evita surprise_removed en channel switch)
 - USB autosuspend desactivado (`rtw_enusbss=0`)
 
-## EDCCA / Adaptivity
+### EDCCA / Adaptivity
 
 ### Parámetros runtime (en /etc/modprobe.d/8192eu.conf)
 | Parámetro | Valor | Efecto |
 |-----------|-------|--------|
 | `rtw_adaptivity_th_l2h_ini` | 15 | Threshold L2H inicial |
 | `rtw_adaptivity_th_edcca_hl_diff` | 5 | Diferencia H-L EDCCA |
-| `rtw_rxgain_offset_2g` | 4 | Atenuación LNA 2.4GHz |
+| `rtw_rxgain_offset_2g` | 0 | Sin atenuación LNA (2026-08-08: era 4; con señal débil atenuar empeora sensibilidad — medido +19 dB y 3.2x throughput) |
 | `rtw_notch_filter` | 1 | Filtro notch |
 | `rtw_smart_ps` | 0 | Sin ahorro energía |
+| `rtw_bw_mode` | 0x20 | HT20 forzado en 2.4G (2026-08-08: era 0x21 HT40; canal angosto con 1 antena capta menos ruido) |
 
 ### Init override (parche aplicado)
 `phydm_set_l2h_th_ini_carrier_sense()` en `driver/hal/phydm/phydm_adaptivity.c:350`

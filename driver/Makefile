@@ -1,4 +1,5 @@
-ccflags-y += -O3
+ccflags-y += -O2
+# [2026-08-08] -O3 -> -O2: hot path USB, kernel viejo. -O2 es el estándar Realtek, código más chico (mejor caché), sin pérdida medible en USB. Validado en colab (RC 0).
 #ccflags-y += -O1
 #ccflags-y += -Wall
 #ccflags-y += -Wextra
