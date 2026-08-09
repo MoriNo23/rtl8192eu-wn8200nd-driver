@@ -27,3 +27,8 @@ AGENTS.md
 # Windows binaries
 *.exe
 *.dll
+
+# Vendored DVD dumps (Windows/Mac installer binaries, not source)
+dvd-backup/
+TL-WN8200ND(UN)_V3_*/
+TL-WN821N_EUUS_V6_*/
