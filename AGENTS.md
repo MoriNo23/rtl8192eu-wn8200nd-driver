@@ -1,4 +1,4 @@
-# rtl8192eu-linux — TL-WN8200ND Driver
+# rtl8192eu-wn8200nd-driver — TL-WN8200ND Driver
 
 ## Versionado (DKMS pkg rtl8192eu)
 
@@ -14,9 +14,9 @@ comportamiento/optimizaciones, major para cambios estructurales. Bump → renomb
 | 1.6 | 2026-07-30 | duplicado: baseline del fork original rtl8192eu (rama 5.11.2.3) + parches 1T1R/EDCCA/EPIPE/MAX_IO_ERR |
 
 ## Repo
-- Remote: `MoriNo23/TL-WN8200ND-driver` (privado)
+- Remote: `MoriNo23/rtl8192eu-wn8200nd-driver` (privado)
 - Branch: `optimization-wn8200nd` (única, default)
-- Fork del repo original `rtl8192eu-linux`, rama `5.11.2.3`
+- Fork del repo original `rtl8192eu-wn8200nd-driver`, rama `5.11.2.3`
 - Adaptador: TL-WN8200ND(UN) V3.0 (chipset RTL8192EU) — DVD oficial es V2.0
 
 ## Arquitectura
