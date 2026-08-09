@@ -1,5 +1,18 @@
 # rtl8192eu-linux — TL-WN8200ND Driver
 
+## Versionado (DKMS pkg rtl8192eu)
+
+La versión del paquete DKMS (`VER` en install_manual.sh, hoy `1.6.1`) ES el versionado del fork.
+Bump semver: MAJOR.MINOR.PATCH — patch para fixes de build/compat, minor para cambios de
+comportamiento/optimizaciones, major para cambios estructurales. Bump → renombrar
+`/usr/src/rtl8192eu-<old>` → `/usr/src/rtl8192eu-<new>` + `dkms remove/add/build/install --force`.
+
+### CHANGELOG
+| Versión | Fecha | Cambios |
+|---------|-------|---------|
+| 1.6.1 | 2026-08-08 | fix set_monitor_channel kernel 6.12.101+ (netdev arg, backport Debian de 6.13); -O2, rxgain 4→0, HT20 (6324f01, c312b04) |
+| 1.6 | 2026-07-30 | duplicado: baseline del fork original rtl8192eu (rama 5.11.2.3) + parches 1T1R/EDCCA/EPIPE/MAX_IO_ERR |
+
 ## Repo
 - Remote: `MoriNo23/TL-WN8200ND-driver` (privado)
 - Branch: `optimization-wn8200nd` (única, default)
