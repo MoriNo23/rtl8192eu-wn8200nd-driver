@@ -10,6 +10,7 @@ comportamiento/optimizaciones, major para cambios estructurales. Bump → renomb
 ### CHANGELOG
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| 1.6.2 | 2026-08-13 | CONFIG_AP_MODE=y habilitado (softAP/hostapd en wn8200nd); bump DKMS 1.6.2; CI build-check en GitHub (matriz kernels) |
 | 1.6.1 | 2026-08-08 | fix set_monitor_channel kernel 6.12.101+ (netdev arg, backport Debian de 6.13); -O2, rxgain 4→0, HT20 (6324f01, c312b04) |
 | 1.6 | 2026-07-30 | duplicado: baseline del fork original rtl8192eu (rama 5.11.2.3) + parches 1T1R/EDCCA/EPIPE/MAX_IO_ERR |
 

@@ -1,77 +1,73 @@
-name: Build rtl8192eu driver
+name: Build rtl8192eu driver (CI build-check)
+
+# Validación de compilación en GitHub Actions.
+# NOTA: el .ko generado aquí corre en el kernel de Ubuntu del runner y NO es
+# compatible (vermagic) con Debian 6.12.x del equipo target. Este workflow es
+# un BUILD-CHECK: confirma que el source compila limpio con CONFIG_AP_MODE=y
+# en kernels modernos. La instalación real se hace localmente con
+# install_manual.sh (compila contra los headers del kernel local).
 
 on:
   push:
-    branches: [optimization-wn8200nd]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   build:
+    strategy:
+      fail-fast: false
+      matrix:
+        kernel:
+          - linux-headers-generic
+          - linux-headers-6.8-generic
+          - linux-headers-6.11-generic
+          - linux-headers-6.14-generic
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # necesario para crear releases
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install kernel headers
+      - name: Install kernel headers + toolchain
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq linux-headers-generic build-essential bc
+          sudo apt-get install -y -qq build-essential bc "${{ matrix.kernel }}"
 
-      - name: Build driver
+      - name: Build driver (max parallelism)
         run: |
           make clean
-          make -j$(nproc)
+          make -j"$(nproc)" all
 
-      - name: Verify module
+      - name: Verify module exists
         run: |
           if [ ! -f driver/8192eu.ko ]; then
             echo "ERROR: driver/8192eu.ko no se generó"
             exit 1
           fi
           modinfo driver/8192eu.ko
+
+      - name: Verify CONFIG_AP_MODE compiled in (softAP/hostapd support)
+        run: |
           echo "=== PARÁMETROS COMPILADOS ==="
           modinfo -p driver/8192eu.ko | grep -E "rtw_enusbss|rtw_en_napi|rtw_usb_rxagg|rtw_dynamic_agg"
+          echo "=== SÍMBOLOS AP (deben aparecer) ==="
+          for sym in rtw_ap_mode_sta_assoc_state_notify rtw_ap_br_port_control rtw_check_beacon_data; do
+            if strings driver/8192eu.ko | grep -q "$sym"; then
+              echo "OK: $sym presente"
+            else
+              echo "WARN: $sym no encontrado"
+            fi
+          done
+          # El flag -DCONFIG_AP_MODE debe estar en el vermagic/ccflags
+          if strings driver/8192eu.ko | grep -q "CONFIG_AP_MODE"; then
+            echo "OK: CONFIG_AP_MODE en el .ko"
+          else
+            echo "WARN: CONFIG_AP_MODE no detectado en strings del .ko"
+          fi
 
-      - name: Package and create release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          KERNEL=$(uname -r)
-          SHA=$(echo ${{ github.sha }} | cut -c1-7)
-          TAG="build-$SHA-kernel-$KERNEL"
-
-          # Comprimir .ko con nombre descriptivo
-          gzip -9 -k driver/8192eu.ko
-          FILENAME="rtl8192eu-$SHA-$KERNEL.ko.gz"
-          mv driver/8192eu.ko.gz "$FILENAME"
-
-          # Notas del release
-          cat > /tmp/release-notes.md <<- EOM
-          Build automático del driver RTL8192EU (optimization-wn8200nd)
-
-          - Kernel: $KERNEL
-          - Commit: ${{ github.sha }}
-          - Parámetros: rtw_enusbss=0 rtw_en_napi=0 rtw_usb_rxagg_mode=0 rtw_dynamic_agg_enable=0
-          EOM
-
-          # Limpiar release previo con mismo tag (en caso de rebuild)
-          gh release delete "$TAG" --repo ${{ github.repository }} --yes 2>/dev/null || true
-          git tag -d "$TAG" 2>/dev/null || true
-          git push origin --delete refs/tags/"$TAG" 2>/dev/null || true
-
-          # Crear release y subir archivo
-          gh release create "$TAG" \
-            --repo ${{ github.repository }} \
-            --title "rtl8192eu build $SHA" \
-            --notes-file /tmp/release-notes.md \
-            "$FILENAME"
-
-          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-
-      - name: Build result
-        run: |
-          echo "✅ Build completado"
-          echo "Kernel: $(uname -r)"
-          echo "Release: $RELEASE_TAG"
-          echo "Descargar: gh release download \"$RELEASE_TAG\" --repo ${{ github.repository }}"
+      - name: Upload artifact (build validation only — NOT for Debian install)
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtl8192eu-${{ matrix.kernel }}-${{ github.sha }}
+          path: driver/8192eu.ko
+          retention-days: 7
