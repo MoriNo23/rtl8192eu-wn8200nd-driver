@@ -17,17 +17,26 @@
 #include <hal_data.h>
 #include <rtw_sreset.h>
 #include <linux/workqueue.h>
-	/* === URB STALL RECOVERY PATCH ===
-	 * EPIPE (endpoint stall) recovery: clear halt via workqueue + resubmit.
-	 * usb_clear_halt() duerme (control transfer), no se puede llamar desde
-	 * callback URB (contexto softirq) — se delega a un workqueue.
-	 * Si clear_halt falla o el error persiste, el contador continual_io_error
-	 * sigue subiendo y el driver escala a surprise_removed (driver restart).
-	 * Single-adapter assumption: IFACE_NUMBER=1, no CONFIG_CONCURRENT_MODE.
-	 */
-	static struct work_struct rtw_ep_reset_work;
-	static _adapter *rtw_ep_reset_padapter;
-	static struct recv_buf *rtw_ep_reset_recvbuf;
+/* === URB STALL RECOVERY PATCH ===
+ * EPIPE (endpoint stall) recovery: clear halt via workqueue + resubmit.
+ * usb_clear_halt() duerme (control transfer), no se puede llamar desde
+ * callback URB (contexto softirq) — se delega a un workqueue.
+ * Si clear_halt falla o el error persiste, el contador usb_stall_err
+ * sigue subiendo y el driver escala a surprise_removed (driver restart).
+ * Single-adapter assumption: IFACE_NUMBER=1, no CONFIG_CONCURRENT_MODE.
+ *
+ * [FIX 2026-08-22 / AUDIT A1-A3]
+ *  - rtw_ep_reset_pending: evita que dos URBs en stall pisen el recv_buf
+ *    pendiente (antes el segundo sobreescribía al primero -> buffer RX perdido).
+ *  - rtw_usb_ep_reset_work_deinit(): cancel_work_sync obligatorio en disconnect,
+ *    si no el worker despierta sobre un adapter ya liberado (use-after-free).
+ *  - el worker aborta si el adaptador ya está marcado como surprise_removed
+ *    o el driver está parando.
+ */
+static struct work_struct rtw_ep_reset_work;
+static _adapter *rtw_ep_reset_padapter;
+static struct recv_buf *rtw_ep_reset_recvbuf;
+static ATOMIC_T rtw_ep_reset_pending;
 
 static void rtw_ep_reset_worker(struct work_struct *work)
 {
@@ -39,7 +48,14 @@ static void rtw_ep_reset_worker(struct work_struct *work)
 	int ret;
 
 	if (!padapter || !rtw_ep_reset_recvbuf)
-		return;
+		goto done;
+
+	/* [FIX A3] el adaptador pudo ser declarado muerto o desconectado
+	 * entre el encolado y la ejecución de este work: no tocar el HW. */
+	if (rtw_is_surprise_removed(padapter) || rtw_is_drv_stopped(padapter)) {
+		RTW_INFO("[URB-REC] abortado: surprise_removed/drv_stopped\n");
+		goto done;
+	}
 
 	pdvobj = adapter_to_dvobj(padapter);
 	pusbd = pdvobj->pusbdev;
@@ -57,21 +73,59 @@ static void rtw_ep_reset_worker(struct work_struct *work)
 		RTW_INFO("[URB-REC] clear_halt int IN(0x%x): ret=%d\n", pdvobj->RtInPipe[1], ret);
 	}
 
-	/* recovery exitoso → reset contador para no escalar a surprise_removed */
+	/* recovery exitoso → reset contadores para no escalar a surprise_removed */
 	rtw_reset_continual_io_error(pdvobj);
+	ATOMIC_SET(&pdvobj->usb_stall_err, 0);
 
 	/* re-armar RX con el recvbuf que fallo */
 	if (!RTW_CANNOT_RX(padapter)) {
 		rtw_read_port(padapter, precvpriv->ff_hwaddr, 0, (unsigned char *)rtw_ep_reset_recvbuf);
 		RTW_INFO("[URB-REC] RX re-submitted OK\n");
 	}
+
+done:
+	/* [FIX A2] libera el slot: a partir de aquí otro URB en stall puede
+	 * volver a encolar el work con su propio recv_buf. */
+	rtw_ep_reset_recvbuf = NULL;
+	ATOMIC_SET(&rtw_ep_reset_pending, 0);
+}
+
+/* [FIX A2] encola el work solo si no hay ya uno pendiente. Devuelve _TRUE si
+ * lo encoló. Un clear_halt arregla el endpoint para todos los URBs en vuelo,
+ * así que no tiene sentido encolar varios. */
+static u8 rtw_ep_reset_schedule(_adapter *padapter, struct recv_buf *precvbuf)
+{
+	if (rtw_is_surprise_removed(padapter) || rtw_is_drv_stopped(padapter))
+		return _FALSE;
+
+	if (ATOMIC_READ(&rtw_ep_reset_pending) != 0)
+		return _FALSE;
+
+	ATOMIC_SET(&rtw_ep_reset_pending, 1);
+	rtw_ep_reset_padapter = padapter;
+	rtw_ep_reset_recvbuf = precvbuf;
+	_set_workitem(&rtw_ep_reset_work);
+	return _TRUE;
 }
 
 void rtw_usb_ep_reset_work_init(void)
 {
+	ATOMIC_SET(&rtw_ep_reset_pending, 0);
+	rtw_ep_reset_padapter = NULL;
+	rtw_ep_reset_recvbuf = NULL;
 	_init_workitem(&rtw_ep_reset_work, rtw_ep_reset_worker, NULL);
 }
-	/* === END URB STALL RECOVERY PATCH === */
+
+/* [FIX A1] OBLIGATORIO en el path de disconnect / unload, antes de liberar el
+ * adapter: sin esto el worker puede despertar sobre memoria ya liberada. */
+void rtw_usb_ep_reset_work_deinit(void)
+{
+	_cancel_workitem_sync(&rtw_ep_reset_work);
+	rtw_ep_reset_padapter = NULL;
+	rtw_ep_reset_recvbuf = NULL;
+	ATOMIC_SET(&rtw_ep_reset_pending, 0);
+}
+/* === END URB STALL RECOVERY PATCH === */
 struct rtw_async_write_data {
 	u8 data[VENDOR_CMD_MAX_DATA_LEN];
 	struct usb_ctrlrequest dr;
@@ -569,6 +623,7 @@ static void usb_write_port_complete(struct urb *purb, struct pt_regs *regs)
 		 * of 5+ errors since driver load permanently trips surprise_removed
 		 * even if all subsequent transmissions succeed. */
 		rtw_reset_continual_io_error(adapter_to_dvobj(padapter));
+		ATOMIC_SET(&adapter_to_dvobj(padapter)->usb_stall_err, 0);
 
 	} else {
 		RTW_INFO("###=> urb_write_port_complete status(%d)\n", purb->status);
@@ -583,8 +638,23 @@ static void usb_write_port_complete(struct urb *purb, struct pt_regs *regs)
 			 * surprise_removed (que mata la interfaz hasta modprobe cycle),
 			 * reseteamos el contador de errores continuos y reintentamos el envío.
 			 * El hardware se re-sincroniza solo en el nuevo canal.
+			 *
+			 * [FIX 2026-08-22 / AUDIT A4] El reset era INCONDICIONAL: un endpoint
+			 * permanentemente en halt escupía -EPIPE para siempre y el driver no
+			 * lo detectaba nunca (interfaz TX-muerta en silencio). Ahora los
+			 * stalls tienen contador propio con umbral MAX_USB_STALL_ERR: se
+			 * sigue tolerando el channel switch, pero un fallo permanente escala.
 			 */
-			rtw_reset_continual_io_error(adapter_to_dvobj(padapter));
+			struct dvobj_priv *pdvobj = adapter_to_dvobj(padapter);
+			int stalls = ATOMIC_INC_RETURN(&pdvobj->usb_stall_err);
+
+			if (stalls > MAX_USB_STALL_ERR) {
+				RTW_INFO("%s: %d stalls consecutivos (> %d) -> endpoint colgado de verdad, surprise_removed\n",
+					 __func__, stalls, MAX_USB_STALL_ERR);
+				rtw_set_surprise_removed(padapter);
+			} else {
+				rtw_reset_continual_io_error(pdvobj);
+			}
 			sreset_set_wifi_error_status(padapter, USB_WRITE_PORT_FAIL);
 		} else if (purb->status == -EINPROGRESS) {
 			goto check_completion;
@@ -866,6 +936,7 @@ void usb_read_port_complete(struct urb *purb, struct pt_regs *regs)
 			rtw_read_port(padapter, precvpriv->ff_hwaddr, 0, (unsigned char *)precvbuf);
 		} else {
 			rtw_reset_continual_io_error(adapter_to_dvobj(padapter));
+			ATOMIC_SET(&adapter_to_dvobj(padapter)->usb_stall_err, 0);
 
 			precvbuf->transfer_len = purb->actual_length;
 
@@ -877,16 +948,31 @@ void usb_read_port_complete(struct urb *purb, struct pt_regs *regs)
 
 		RTW_INFO("###=> usb_read_port_complete => urb.status(%d)\n", purb->status);
 
-		if (rtw_inc_and_chk_continual_io_error(adapter_to_dvobj(padapter)) == _TRUE)
+		/*
+		 * [FIX 2026-08-22 / AUDIT A3] -EPIPE (endpoint stall) es RECUPERABLE:
+		 * antes se marcaba surprise_removed ANTES de programar el clear_halt,
+		 * dejando al worker re-armando RX sobre un adaptador ya declarado
+		 * muerto. Ahora los stalls van por su propio contador y solo escalan
+		 * si superan MAX_USB_STALL_ERR.
+		 */
+		if (purb->status == -EPIPE) {
+			struct dvobj_priv *pdvobj = adapter_to_dvobj(padapter);
+			int stalls = ATOMIC_INC_RETURN(&pdvobj->usb_stall_err);
+
+			if (stalls > MAX_USB_STALL_ERR) {
+				RTW_INFO("%s: %d stalls consecutivos (> %d) -> surprise_removed\n",
+					 __func__, stalls, MAX_USB_STALL_ERR);
+				rtw_set_surprise_removed(padapter);
+			}
+		} else if (rtw_inc_and_chk_continual_io_error(adapter_to_dvobj(padapter)) == _TRUE) {
 			rtw_set_surprise_removed(padapter);
+		}
 
 		switch (purb->status) {
 		case -EPIPE:
 			/* [URB-STALL-RECOVERY] endpoint stall: clear halt + resubmit */
 			RTW_INFO("###=> EPIPE (endpoint stall), scheduling clear_halt\n");
-			rtw_ep_reset_padapter = padapter;
-			rtw_ep_reset_recvbuf = precvbuf;
-			_set_workitem(&rtw_ep_reset_work);
+			rtw_ep_reset_schedule(padapter, precvbuf);
 			break;
 		case -EINVAL:
 		case -ENODEV:
@@ -1027,6 +1113,7 @@ void usb_read_port_complete(struct urb *purb, struct pt_regs *regs)
 			rtw_read_port(padapter, precvpriv->ff_hwaddr, 0, (unsigned char *)precvbuf);
 		} else {
 			rtw_reset_continual_io_error(adapter_to_dvobj(padapter));
+			ATOMIC_SET(&adapter_to_dvobj(padapter)->usb_stall_err, 0);
 
 			precvbuf->transfer_len = purb->actual_length;
 			skb_put(precvbuf->pskb, purb->actual_length);
@@ -1044,8 +1131,25 @@ void usb_read_port_complete(struct urb *purb, struct pt_regs *regs)
 
 		RTW_INFO("###=> usb_read_port_complete => urb.status(%d)\n", purb->status);
 
-		if (rtw_inc_and_chk_continual_io_error(adapter_to_dvobj(padapter)) == _TRUE)
+		/*
+		 * [FIX 2026-08-22 / AUDIT A3] -EPIPE (endpoint stall) es RECUPERABLE:
+		 * antes se marcaba surprise_removed ANTES de programar el clear_halt,
+		 * dejando al worker re-armando RX sobre un adaptador ya declarado
+		 * muerto. Ahora los stalls van por su propio contador y solo escalan
+		 * si superan MAX_USB_STALL_ERR.
+		 */
+		if (purb->status == -EPIPE) {
+			struct dvobj_priv *pdvobj = adapter_to_dvobj(padapter);
+			int stalls = ATOMIC_INC_RETURN(&pdvobj->usb_stall_err);
+
+			if (stalls > MAX_USB_STALL_ERR) {
+				RTW_INFO("%s: %d stalls consecutivos (> %d) -> surprise_removed\n",
+					 __func__, stalls, MAX_USB_STALL_ERR);
+				rtw_set_surprise_removed(padapter);
+			}
+		} else if (rtw_inc_and_chk_continual_io_error(adapter_to_dvobj(padapter)) == _TRUE) {
 			rtw_set_surprise_removed(padapter);
+		}
 
 		switch (purb->status) {
 		case -EPIPE:
@@ -1056,9 +1160,7 @@ void usb_read_port_complete(struct urb *purb, struct pt_regs *regs)
 			 * driver escala a surprise_removed arriba (driver restart).
 			 */
 			RTW_INFO("###=> EPIPE (endpoint stall), scheduling clear_halt\n");
-			rtw_ep_reset_padapter = padapter;
-			rtw_ep_reset_recvbuf = precvbuf;
-			_set_workitem(&rtw_ep_reset_work);
+			rtw_ep_reset_schedule(padapter, precvbuf);
 			break;
 		case -EINVAL:
 		case -ENODEV:

@@ -28,7 +28,7 @@ Bus 001 Device 018: ID 2357:0126 TP-Link 802.11n NIC
 | Physical defect | antenna B connector desoldered → driver forced to 1T1R |
 | Host | ~2009 netbook, Intel Sandy Bridge, limited RAM |
 | Target kernel | Debian 6.12.x |
-| DKMS package | `rtl8192eu/1.6.2` |
+| DKMS package | `rtl8192eu/1.6.3` |
 
 The matching entry in the driver's USB ID table is
 `driver/os_dep/linux/usb_intf.c:212`:
@@ -62,7 +62,7 @@ If you clone this repo, **your adapter may be fine** — read the tuning guide t
 |---|---|---|
 | `rtw_trx_path_bmp=0x11` (1T1R) | only antenna A | antenna B connector desoldered (physically dead) |
 | `rtw_rxgain_offset_2g=0` | no LNA attenuation | antenna A signal weak (-73 dBm); attenuation made it worse |
-| `rtw_bw_mode=0x20` | HT20 only | narrow channel with 1 antenna, weak signal |
+| `rtw_bw_mode=0x21` | HT40 enabled (2.4 GHz) | re-enabled 2026-08-22; matches the source default |
 | `-O2` build | standard optimization | smaller code, better cache on an old CPU |
 
 ### Full-capability tuning (healthy 2-antenna adapter)
@@ -90,7 +90,7 @@ Then reinstall (see below).
 |---|---|---|---|
 | STA (Wi-Fi client) | yes | ✅ enabled | — |
 | WPA2/WPA3 | yes | ✅ enabled | — |
-| 2.4 GHz HT20/HT40 | yes | HT20 only | `rtw_bw_mode=0x21` |
+| 2.4 GHz HT20/HT40 | yes | ✅ HT40 (`0x21`) | `rtw_bw_mode=0x20` forces HT20 |
 | 2x2 MIMO | yes | 1T1R (antenna A) | `rtw_trx_path_bmp=0x33` |
 | Monitor mode | yes | ❌ disabled by build | `CONFIG_WIFI_MONITOR=y` + rebuild |
 | Monitor + packet injection (combined) | **no** | ❌ | not supported — see below |
@@ -135,7 +135,7 @@ sudo ./wifi_manager.sh            # interactive TUI (install/update/remove)
 ```
 
 `install_manual.sh` (v3):
-1. Sync patched source to `/usr/src/rtl8192eu-1.6.2` + `dkms add` if missing
+1. Sync patched source to `/usr/src/rtl8192eu-1.6.3` + `dkms add` if missing
 2. `dkms build` + `dkms install --force` (the `.ko.xz` in `updates/dkms/` wins)
 3. Restart NetworkManager at the end
 
@@ -143,7 +143,7 @@ Check:
 
 ```bash
 lsmod | grep 8192
-cat /sys/module/8192eu/version     # 1.6.2
+cat /sys/module/8192eu/version     # 1.6.3
 ```
 
 ### Hardcoded params (source)
@@ -169,7 +169,7 @@ cat /sys/module/8192eu/version     # 1.6.2
 | `rtw_rxgain_offset_2g` | 0 | LNA attenuation (0 = more) |
 | `rtw_notch_filter` | 1 | notch filter on |
 | `rtw_smart_ps` | 0 | power saving for realtek (no) |
-| `rtw_bw_mode` | 0x20 | HT20 (0x21 = HT40) |
+| `rtw_bw_mode` | **0x21** | HT40 in 2.4 GHz (0x20 = HT20 only) |
 
 Note: writing to `/sys/module/8192eu/parameters/*` does **not** propagate to runtime
 registry. Use `/proc/net/rtl8192eu/<iface>/odm/cmd` for live EDCCA tuning instead.

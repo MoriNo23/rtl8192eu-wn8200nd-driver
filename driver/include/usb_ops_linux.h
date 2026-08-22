@@ -94,6 +94,8 @@ void usb_recv_tasklet(unsigned long priv);
 
 /* [URB-STALL-RECOVERY] init workqueue para clear_halt de endpoints USB */
 void rtw_usb_ep_reset_work_init(void);
+/* [FIX AUDIT A1] cancel_work_sync obligatorio antes de liberar el adapter */
+void rtw_usb_ep_reset_work_deinit(void);
 
 #ifdef CONFIG_USB_INTERRUPT_IN_PIPE
 void usb_read_interrupt_complete(struct urb *purb, struct pt_regs *regs);

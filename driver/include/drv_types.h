@@ -1272,6 +1272,11 @@ struct dvobj_priv {
 	u8	irq_alloc;
 	ATOMIC_T continual_io_error;
 
+	/* [AUDIT A4] contador propio de stalls USB (-EPIPE/-EPROTO), separado de
+	 * continual_io_error para tolerar el channel switch sin perder la
+	 * detección de un endpoint permanentemente colgado. */
+	ATOMIC_T usb_stall_err;
+
 	ATOMIC_T disable_func;
 
 	u8 xmit_block;

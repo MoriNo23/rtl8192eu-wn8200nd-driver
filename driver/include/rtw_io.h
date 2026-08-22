@@ -278,6 +278,21 @@ struct reg_protocol_wt {
  * por lo que la detección de fallo genuino no se ve afectada.
  */
 #define MAX_CONTINUAL_IO_ERR 80
+
+/*
+ * [PATCH optimization-wn8200nd / AUDIT A4] MAX_USB_STALL_ERR = 200
+ *
+ * -EPIPE / -EPROTO son transitorios durante un channel switch, por eso NO
+ * escalan a surprise_removed por el camino normal. Pero antes se llamaba a
+ * rtw_reset_continual_io_error() de forma incondicional, así que un endpoint
+ * permanentemente en halt generaba -EPIPE indefinidamente sin que el driver
+ * lo detectara nunca: la interfaz quedaba muerta en silencio.
+ *
+ * Ahora los stalls llevan su propio contador con un umbral mucho más alto:
+ * se tolera la ráfaga del channel switch, pero un fallo permanente acaba
+ * escalando igualmente.
+ */
+#define MAX_USB_STALL_ERR 200
 #endif
 
 #ifdef CONFIG_SDIO_HCI
