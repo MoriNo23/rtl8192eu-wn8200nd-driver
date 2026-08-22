@@ -6,6 +6,51 @@ Forked from [`rtl8192eu-linux`](https://github.com/clnhub/rtl8192eu-linux), bran
 
 > ⚠️ **KERNEL MODULE.** Errors in build or install can break your network, crash the kernel or lose data. You run it at your own risk.
 
+> 📌 **This is a personal fork.** Every default here was chosen for the one physical
+> adapter described below (which has a **dead antenna B**). It is published as-is, not as a
+> general-purpose driver. If you clone it, read [Full-capability tuning](#full-capability-tuning-healthy-2-antenna-adapter) first.
+
+---
+
+## My hardware (this repo's reference unit)
+
+```
+$ lsusb | grep 2357
+Bus 001 Device 018: ID 2357:0126 TP-Link 802.11n NIC
+```
+
+| Item | Value |
+|---|---|
+| USB ID | `2357:0126` (vendor TP-Link `0x2357`, product `0x0126`) |
+| Product | TL-WN8200ND(UN) **V3.0** (the bundled DVD is for V2.0) |
+| Chipset | Realtek RTL8192EU, USB 2.0, 802.11n 2T2R (2.4 GHz only) |
+| Interface name | `wn8200nd` (renamed from `wlanX`) |
+| Physical defect | antenna B connector desoldered → driver forced to 1T1R |
+| Host | ~2009 netbook, Intel Sandy Bridge, limited RAM |
+| Target kernel | Debian 6.12.x |
+| DKMS package | `rtl8192eu/1.6.2` |
+
+The matching entry in the driver's USB ID table is
+`driver/os_dep/linux/usb_intf.c:212`:
+
+```c
+{USB_DEVICE(0x2357, 0x0126), .driver_info = RTL8192E}, /* TPLINK - TL-WN8200ND */
+```
+
+Other IDs bound by this build (same `RTL8192E` block, lines 203–214): Realtek `0bda:818b`
+and `0bda:818c` (default IDs), D-Link DWA-131 `2001:3312` / `2001:3319`,
+PLANEX GW-300S `2019:ab33`, TP-Link TL-WN821N/822N/823N `2357:0107`/`0108`/`0109`,
+Mercusys MW300UM/MW300UH `2c4e:0100`/`0104`.
+
+Verify your own unit:
+
+```bash
+lsusb -d 2357:0126                 # present on the bus?
+lsusb -v -d 2357:0126 | grep bcdDevice   # hardware revision
+modinfo 8192eu | grep 2357p0126    # is the ID compiled into the loaded module?
+dmesg | grep -i 8192eu             # bind + interface name
+```
+
 ---
 
 ## What this fork changes
@@ -49,7 +94,7 @@ Then reinstall (see below).
 | 2x2 MIMO | yes | 1T1R (antenna A) | `rtw_trx_path_bmp=0x33` |
 | Monitor mode | yes | ❌ disabled by build | `CONFIG_WIFI_MONITOR=y` + rebuild |
 | Monitor + packet injection (combined) | **no** | ❌ | not supported — see below |
-| AP mode | yes | ❌ disabled on purpose | `CONFIG_AP_MODE=y` + rebuild |
+| AP mode (softAP / hostapd) | yes | ✅ enabled since 1.6.2 | — |
 
 ## Monitor mode & pentesting
 
@@ -90,7 +135,7 @@ sudo ./wifi_manager.sh            # interactive TUI (install/update/remove)
 ```
 
 `install_manual.sh` (v3):
-1. Sync patched source to `/usr/src/rtl8192eu-1.6.1` + `dkms add` if missing
+1. Sync patched source to `/usr/src/rtl8192eu-1.6.2` + `dkms add` if missing
 2. `dkms build` + `dkms install --force` (the `.ko.xz` in `updates/dkms/` wins)
 3. Restart NetworkManager at the end
 
@@ -98,7 +143,7 @@ Check:
 
 ```bash
 lsmod | grep 8192
-cat /sys/module/8192eu/version     # 1.6.1
+cat /sys/module/8192eu/version     # 1.6.2
 ```
 
 ### Hardcoded params (source)
