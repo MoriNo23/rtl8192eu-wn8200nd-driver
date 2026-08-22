@@ -36,7 +36,8 @@ jobs:
           set -e
           make -n clean -C driver >/dev/null
           echo "OK: rama no-Kbuild parsea"
-          make -f driver/Makefile -C driver KERNELRELEASE=1 src=. -p >/dev/null 2>&1
+          make -C driver -f Makefile -n --eval='__sanity_parse:' \
+            __sanity_parse KERNELRELEASE=1 src=. >/dev/null 2>&1
           echo "OK: rama Kbuild parsea"
 
       - name: No hay ficheros duplicados por mayúsculas/minúsculas
