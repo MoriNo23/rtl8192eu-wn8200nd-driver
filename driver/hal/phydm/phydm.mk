@@ -1,30 +1,24 @@
 EXTRA_CFLAGS += -I$(src)/hal/phydm
 
 _PHYDM_FILES := hal/phydm/phydm_debug.o	\
-								hal/phydm/phydm_antdiv.o\
 								hal/phydm/phydm_soml.o\
 								hal/phydm/phydm_smt_ant.o\
-								hal/phydm/phydm_antdect.o\
 								hal/phydm/phydm_interface.o\
 								hal/phydm/phydm_phystatus.o\
 								hal/phydm/phydm_hwconfig.o\
 								hal/phydm/phydm.o\
 								hal/phydm/phydm_dig.o\
-								hal/phydm/phydm_pathdiv.o\
 								hal/phydm/phydm_rainfo.o\
-								hal/phydm/phydm_dynamictxpower.o\
 								hal/phydm/phydm_adaptivity.o\
 								hal/phydm/phydm_cfotracking.o\
 								hal/phydm/phydm_noisemonitor.o\
 								hal/phydm/phydm_beamforming.o\
-								hal/phydm/phydm_direct_bf.o\
 								hal/phydm/phydm_dfs.o\
 								hal/phydm/txbf/halcomtxbf.o\
 								hal/phydm/txbf/haltxbfinterface.o\
 								hal/phydm/txbf/phydm_hal_txbf_api.o\
 								hal/phydm/phydm_adc_sampling.o\
 								hal/phydm/phydm_ccx.o\
-								hal/phydm/phydm_psd.o\
 								hal/phydm/phydm_primary_cca.o\
 								hal/phydm/phydm_cck_pd.o\
 								hal/phydm/phydm_rssi_monitor.o\
@@ -232,3 +226,16 @@ _PHYDM_FILES += hal/phydm/$(RTL871X)/halhwimg8814b_bb.o\
 								hal/phydm/halrf/$(RTL871X)/halrf_rfk_init_8814b.o\
 								hal/phydm/halrf/$(RTL871X)/halrf_txgapk_8814b.o
 endif
+
+
+# [FIX 2026-08-22 / AUDIT 2.1] Objetos cuyo contenido esta 100% dentro de un
+# #ifdef desactivado: se compilaban siempre para producir un objeto vacio.
+# OJO: para activar una de estas features hay que poner la variable de make a 'y'
+# Y definir el macro correspondiente en ccflags-y; si no, se compila vacio o no
+# se compila y falla el link.
+$(MODULE_NAME)-$(CONFIG_PHYDM_ANTENNA_DIVERSITY) += hal/phydm/phydm_antdiv.o
+$(MODULE_NAME)-$(CONFIG_ANT_DETECTION) += hal/phydm/phydm_antdect.o
+$(MODULE_NAME)-$(CONFIG_PATH_DIVERSITY) += hal/phydm/phydm_pathdiv.o
+$(MODULE_NAME)-$(CONFIG_DYNAMIC_TX_TWR) += hal/phydm/phydm_dynamictxpower.o
+$(MODULE_NAME)-$(CONFIG_DIRECTIONAL_BF) += hal/phydm/phydm_direct_bf.o
+$(MODULE_NAME)-$(CONFIG_PSD_TOOL) += hal/phydm/phydm_psd.o

@@ -1,8 +1,33 @@
 # rtl8192eu-wn8200nd-driver — TL-WN8200ND Driver
 
+## ⚡ Skills — CARGA OBLIGATORIA ANTES DE TRABAJAR
+
+Antes de tocar código, leer las skills de `skills/`. Son la caja de herramientas del
+refactor y **cada una define el procedimiento correcto**; no improvisar con sed/regex
+cuando existe una skill para el caso.
+
+| Fase | Skills a cargar |
+|---|---|
+| Entender el árbol | `bear-compilation-database`, `code-navigation-cscope-global`, `cflow-callgraph` |
+| Medir estado inicial | `sparse-typechecker`, `smatch-static-analysis`, `checkpatch-kernel-style` |
+| Podar código muerto | `unifdef-coan`, `iwyu-deheader` |
+| Transformar | `coccinelle-spatch`, `clang-tooling-c` |
+| Verificar APIs de kernel | `bootlin-elixir-api`, `lore-kernel-archives-api`, `debian-sources-api`, `kernel-doc-and-api-references`, `kernel-org-releases-api` |
+| Seguridad / versiones | `linux-kernel-cves-api`, `repology-api`, `github-rest-api-code-archaeology` |
+| Historia del repo | `git-filter-repo` |
+
+Índice completo y orden de uso: `skills/README.md`.
+Reglas mínimas que imponen las skills:
+- Antes de borrar una función: `cscope -dL -3` **+** `grep -w` (los punteros a función no
+  aparecen en el grafo de llamadas).
+- Antes de borrar un fichero: `grep -n "<fichero>" driver/Makefile driver/hal/phydm/phydm.mk`.
+- Toda transformación masiva va con un `.cocci` versionado, un cambio por commit.
+- Verificar el resultado con `bloat-o-meter antes.o despues.o`: si no baja el tamaño, no se
+  eliminó nada real.
+
 ## Versionado (DKMS pkg rtl8192eu)
 
-La versión del paquete DKMS (`VER` en install_manual.sh, hoy `1.6.1`) ES el versionado del fork.
+La versión del paquete DKMS (`VER` en install_manual.sh, hoy `1.6.3`) ES el versionado del fork.
 Bump semver: MAJOR.MINOR.PATCH — patch para fixes de build/compat, minor para cambios de
 comportamiento/optimizaciones, major para cambios estructurales. Bump → renombrar
 `/usr/src/rtl8192eu-<old>` → `/usr/src/rtl8192eu-<new>` + `dkms remove/add/build/install --force`.
@@ -10,6 +35,7 @@ comportamiento/optimizaciones, major para cambios estructurales. Bump → renomb
 ### CHANGELOG
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| 1.6.3 | 2026-08-22 | HT40 reactivado (0x20→0x21); **fix use-after-free** del work de URB stall (`cancel_work_sync` en disconnect); contador propio de stalls USB; orden EPIPE/escalado corregido; `make clean` arreglado; 10 ficheros clon (Windows) eliminados; 1 MB menos de fuente compilada; skills obligatorias; `docs/AUDIT.md` |
 | 1.6.2 | 2026-08-13 | CONFIG_AP_MODE=y habilitado (softAP/hostapd en wn8200nd); bump DKMS 1.6.2; CI build-check en GitHub (matriz kernels) |
 | 1.6.1 | 2026-08-08 | fix set_monitor_channel kernel 6.12.101+ (netdev arg, backport Debian de 6.13); -O2, rxgain 4→0, HT20 (6324f01, c312b04) |
 | 1.6 | 2026-07-30 | duplicado: baseline del fork original rtl8192eu (rama 5.11.2.3) + parches 1T1R/EDCCA/EPIPE/MAX_IO_ERR |
@@ -71,7 +97,21 @@ tx bitrate 300 Mbps. Script de chequeo: `~/.local/bin/wn8200nd-antenna`.
 
 ## USB Stability
 - `MAX_CONTINUAL_IO_ERR=80` (era 10→30→80, evita surprise_removed en channel switch)
+- `MAX_USB_STALL_ERR=200` (2026-08-22) — contador propio para `-EPIPE`/`-EPROTO`. Antes se
+  reseteaba el contador general de forma incondicional y un endpoint permanentemente colgado
+  nunca escalaba: interfaz muerta en silencio.
 - USB autosuspend desactivado (`rtw_enusbss=0`)
+
+### URB stall recovery (`usb_ops_linux.c:20-130`)
+Recuperación de `-EPIPE` con `usb_clear_halt()` en workqueue (no se puede llamar desde el
+callback URB, duerme). Piezas obligatorias — **no tocar sin leer esto**:
+- `rtw_usb_ep_reset_work_init()` en probe (`usb_intf.c`)
+- **`rtw_usb_ep_reset_work_deinit()` al principio de `rtw_dev_remove()`** — sin el
+  `cancel_work_sync` el worker despierta sobre un adapter liberado (use-after-free).
+- `rtw_ep_reset_pending` (atomic): un solo work encolado a la vez; sin él dos URBs en stall
+  se pisan el `recv_buf` y se pierde un buffer de RX.
+- El worker aborta si `surprise_removed` o `drv_stopped`.
+
 
 ### EDCCA / Adaptivity
 
@@ -83,7 +123,7 @@ tx bitrate 300 Mbps. Script de chequeo: `~/.local/bin/wn8200nd-antenna`.
 | `rtw_rxgain_offset_2g` | 0 | Sin atenuación LNA (2026-08-08: era 4; con señal débil atenuar empeora sensibilidad — medido +19 dB y 3.2x throughput) |
 | `rtw_notch_filter` | 1 | Filtro notch |
 | `rtw_smart_ps` | 0 | Sin ahorro energía |
-| `rtw_bw_mode` | 0x20 | HT20 forzado en 2.4G (2026-08-08: era 0x21 HT40; canal angosto con 1 antena capta menos ruido) |
+| `rtw_bw_mode` | 0x21 | **HT40 activo en 2.4G** (2026-08-22: reactivado; era 0x20/HT20 desde 2026-08-08). Bit 0-3 = 2.4G, bit 4-7 = 5G. Default del source (`os_intfs.c:246`) ya es 0x21 |
 
 ### Init override (parche aplicado)
 `phydm_set_l2h_th_ini_carrier_sense()` en `driver/hal/phydm/phydm_adaptivity.c:350`
@@ -134,9 +174,9 @@ Sysfs module params: `/sys/module/8192eu/parameters/`
 Son variables separadas: module_param se copia a registry_priv solo al init.
 
 ## DKMS
-- **dkms instalado** (3.2.2) y driver **registrado**: `rtl8192eu/1.6` (AUTOINSTALL=yes)
-- Source DKMS: `/usr/src/rtl8192eu-1.6/` — **sync del repo parcheado** (rsync manual tras cada cambio relevante:
-  `sudo rsync -a --delete --exclude '.git' --exclude '*.o' --exclude '*.ko' --exclude '*.cmd' --exclude '*.mod*' --exclude '.tmp_versions' --exclude 'Module.symvers' --exclude 'modules.order' ./ /usr/src/rtl8192eu-1.6/`)
+- **dkms instalado** (3.2.2) y driver **registrado**: `rtl8192eu/1.6.3` (AUTOINSTALL=yes)
+- Source DKMS: `/usr/src/rtl8192eu-1.6.3/` — **sync del repo parcheado** (rsync manual tras cada cambio relevante:
+  `sudo rsync -a --delete --exclude '.git' --exclude '*.o' --exclude '*.ko' --exclude '*.cmd' --exclude '*.mod*' --exclude '.tmp_versions' --exclude 'Module.symvers' --exclude 'modules.order' ./ /usr/src/rtl8192eu-1.6.3/`)
 - **Kernel updates: regeneración AUTOMÁTICA** con los parches (1T1R + EDCCA + EPIPE). El .ko de DKMS
   (`updates/dkms/8192eu.ko.xz`) tiene PRIORIDAD sobre el manual.
 - Instalación principal: `sudo ./wifi_manager.sh` (TUI — hace build + copia a /usr/src + dkms add/install)

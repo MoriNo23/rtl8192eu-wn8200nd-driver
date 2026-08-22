@@ -1356,6 +1356,11 @@ static void rtw_dev_remove(struct usb_interface *pusb_intf)
 
 	RTW_INFO("+rtw_dev_remove\n");
 
+	/* [FIX 2026-08-22 / AUDIT A1] cancelar el work de recuperacion de stall
+	 * ANTES de tocar nada mas: si queda encolado, despierta sobre un adapter
+	 * ya liberado y llama a rtw_read_port() -> use-after-free. */
+	rtw_usb_ep_reset_work_deinit();
+
 	dvobj->processing_dev_remove = _TRUE;
 
 	/* TODO: use rtw_os_ndevs_deinit instead at the first stage of driver's dev deinit function */

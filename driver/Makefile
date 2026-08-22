@@ -260,11 +260,9 @@ endif
 _HAL_INTFS_FILES :=	hal/hal_intf.o \
 			hal/hal_com.o \
 			hal/hal_com_phycfg.o \
-			hal/hal_phy.o \
+			hal/hal_btcoex_wifionly.o \
 			hal/hal_dm.o \
 			hal/hal_dm_acs.o \
-			hal/hal_btcoex_wifionly.o \
-			hal/hal_btcoex.o \
 			hal/hal_mp.o \
 			hal/hal_mcc.o \
 			hal/hal_hci/hal_$(HCI_NAME).o \
@@ -2376,7 +2374,6 @@ rtk_core :=	core/rtw_cmd.o \
 		core/rtw_mlme_ext.o \
 		core/rtw_mi.o \
 		core/rtw_wlan_util.o \
-		core/rtw_vht.o \
 		core/rtw_pwrctrl.o \
 		core/rtw_rf.o \
 		core/rtw_chplan.o \
@@ -2384,20 +2381,14 @@ rtk_core :=	core/rtw_cmd.o \
 		core/rtw_recv.o \
 		core/rtw_sta_mgt.o \
 		core/rtw_ap.o \
-		core/wds/rtw_wds.o \
-		core/mesh/rtw_mesh.o \
-		core/mesh/rtw_mesh_pathtbl.o \
-		core/mesh/rtw_mesh_hwmp.o \
 		core/rtw_xmit.o	\
 		core/rtw_p2p.o \
 		core/rtw_rson.o \
 		core/rtw_tdls.o \
 		core/rtw_br_ext.o \
-		core/rtw_iol.o \
 		core/rtw_sreset.o \
 		core/rtw_btcoex_wifionly.o \
 		core/rtw_btcoex.o \
-		core/rtw_beamforming.o \
 		core/rtw_odm.o \
 		core/rtw_rm.o \
 		core/rtw_rm_fsm.o \
@@ -2431,6 +2422,19 @@ rtk_core += \
 
 $(MODULE_NAME)-y += $(rtk_core)
 
+# [FIX 2026-08-22 / AUDIT 2.1] Estos objetos se compilaban SIEMPRE aunque todo su
+# contenido esta dentro de un #ifdef desactivado -> 643 KB de fuente produciendo
+# objetos vacios. Con el idiom de Kbuild solo se compilan si la feature esta on.
+$(MODULE_NAME)-$(CONFIG_80211AC_VHT) += core/rtw_vht.o
+$(MODULE_NAME)-$(CONFIG_RTW_WDS) += core/wds/rtw_wds.o
+$(MODULE_NAME)-$(CONFIG_RTW_MESH) += core/mesh/rtw_mesh.o core/mesh/rtw_mesh_pathtbl.o core/mesh/rtw_mesh_hwmp.o
+$(MODULE_NAME)-$(CONFIG_BEAMFORMING) += core/rtw_beamforming.o
+$(MODULE_NAME)-$(CONFIG_IOL) += core/rtw_iol.o
+$(MODULE_NAME)-$(CONFIG_RF_SHADOW_RW) += hal/hal_phy.o
+# NOTA: core/rtw_btcoex.o NO puede ser condicional: rtw_btcoex_set_ant_info() y
+# rtw_btcoex_connect_notify() estan FUERA del #ifdef CONFIG_BT_COEXIST y se llaman
+# sin guard desde hal/rtl8192e/usb/usb_halinit.c -> excluirlo rompe el link.
+
 $(MODULE_NAME)-$(CONFIG_WAPI_SUPPORT) += core/rtw_wapi.o	\
 					core/rtw_wapi_sms4.o
 
@@ -2438,6 +2442,7 @@ $(MODULE_NAME)-y += $(_OS_INTFS_FILES)
 $(MODULE_NAME)-y += $(_HAL_INTFS_FILES)
 $(MODULE_NAME)-y += $(_PHYDM_FILES)
 $(MODULE_NAME)-y += $(_BTC_FILES)
+$(MODULE_NAME)-$(CONFIG_BT_COEXIST) += hal/hal_btcoex.o
 $(MODULE_NAME)-y += $(_PLATFORM_FILES)
 
 $(MODULE_NAME)-$(CONFIG_MP_INCLUDED) += core/rtw_mp.o
@@ -2513,18 +2518,11 @@ config_r:
 .PHONY: modules clean
 
 clean:
-	#$(MAKE) -C $(KSRC) M=$(shell pwd) clean
-	cd hal ; rm -fr */*/*/*.mod.c */*/*/*.mod */*/*/*.o */*/*/.*.cmd */*/*/*.ko
-	cd hal ; rm -fr */*/*.mod.c */*/*.mod */*/*.o */*/.*.cmd */*/*.ko
-	cd hal ; rm -fr */*.mod.c */*.mod */*.o */.*.cmd */*.ko
-	cd hal ; rm -fr *.mod.c *.mod *.o .*.cmd *.ko
-	cd core ; rm -fr */*.mod.c */*.mod */*.o */.*.cmd */*.ko
-	cd core ; rm -fr *.mod.c *.mod *.o .*.cmd *.ko
-	cd os_dep/linux ; rm -fr *.mod.c *.mod *.o .*.cmd *.ko
-	cd os_dep ; rm -fr *.mod.c *.mod *.o .*.cmd *.ko
-	cd platform ; rm -fr *.mod.c *.mod *.o .*.cmd *.ko
-	rm -fr Module.symvers ; rm -fr Module.markers ; rm -fr modules.order
-	rm -fr *.mod.c *.mod *.o .*.cmd *.ko *~
-	rm -fr .tmp_versions
+	# [FIX 2026-08-22 / AUDIT 2.4] El clean anterior usaba globs de profundidad
+	# fija (hal/*/*/*.o) y NO borraba hal/phydm/halrf/rtl8192e/*.o ni otros
+	# directorios de 4 niveles -> se enlazaban objetos rancios tras cambiar
+	# la configuracion. find cubre cualquier profundidad.
+	find . \( -name '*.o' -o -name '*.o.d' -o -name '*.ko' -o -name '*.mod' \
+		-o -name '*.mod.c' -o -name '.*.cmd' -o -name '*~' \) -type f -delete
+	rm -rf .tmp_versions modules.order Module.symvers Module.markers
 endif
-
