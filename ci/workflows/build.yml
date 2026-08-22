@@ -1,0 +1,227 @@
+name: CI — build check
+
+# Validación de compilación en GitHub Actions.
+#
+# NOTA: el .ko generado aquí corre contra los headers de Ubuntu del runner y NO es
+# compatible (vermagic) con el Debian 6.12.x del equipo target. Esto es un
+# BUILD-CHECK: confirma que el source compila limpio. La instalación real se hace
+# localmente con install_manual.sh, que compila contra los headers del kernel local.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Chequeos que no necesitan compilar: rápidos, fallan pronto.
+  # ---------------------------------------------------------------------------
+  sanity:
+    name: Sanity (Makefile + árbol)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: El Makefile parsea en sus dos ramas
+        run: |
+          set -e
+          make -n clean -C driver >/dev/null
+          echo "OK: rama no-Kbuild parsea"
+          make -f driver/Makefile -C driver KERNELRELEASE=1 src=. -p >/dev/null 2>&1
+          echo "OK: rama Kbuild parsea"
+
+      - name: No hay ficheros duplicados por mayúsculas/minúsculas
+        # Rompen el clon en filesystems case-insensitive (macOS, Windows).
+        run: |
+          dups=$(find . -path ./.git -prune -o -type f -print \
+                 | awk '{print tolower($0)}' | sort | uniq -d)
+          if [ -n "$dups" ]; then
+            echo "ERROR: nombres duplicados ignorando mayúsculas:"
+            echo "$dups"
+            exit 1
+          fi
+          echo "OK: sin clones case-insensitive"
+
+      - name: No hay restos de merge ni backups en el árbol
+        run: |
+          bad=$(find . -path ./.git -prune -o -type f \
+                \( -name '*.orig' -o -name '*.rej' -o -name '*.mine' \
+                   -o -name '*.backup' -o -name '*.bak' \) -print)
+          if [ -n "$bad" ]; then
+            echo "ERROR: ficheros que no deben estar versionados:"
+            echo "$bad"
+            exit 1
+          fi
+          echo "OK: árbol limpio"
+
+      - name: La versión está sincronizada en todos los sitios
+        run: |
+          set -e
+          v_dkms=$(sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p' dkms.conf)
+          v_inst=$(sed -n 's/^VER="\(.*\)"/\1/p' install_manual.sh)
+          echo "dkms.conf=$v_dkms  install_manual.sh=$v_inst"
+          [ -n "$v_dkms" ] || { echo "ERROR: no se pudo leer PACKAGE_VERSION"; exit 1; }
+          [ "$v_dkms" = "$v_inst" ] || { echo "ERROR: versiones desincronizadas"; exit 1; }
+          grep -q "$v_dkms" AGENTS.md || { echo "ERROR: $v_dkms no está en el CHANGELOG de AGENTS.md"; exit 1; }
+          echo "OK: versión $v_dkms sincronizada"
+
+  # ---------------------------------------------------------------------------
+  # 2. Compilación real contra headers de kernel.
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build (${{ matrix.headers }})
+    needs: sanity
+    runs-on: ubuntu-latest
+    continue-on-error: ${{ matrix.optional }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - headers: linux-headers-generic          # kernel base del runner
+            optional: false
+          - headers: linux-headers-generic-hwe-24.04 # kernel más nuevo (HWE)
+            optional: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar toolchain + headers
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc kmod
+          if ! sudo apt-get install -y -qq "${{ matrix.headers }}"; then
+            echo "::warning::El paquete ${{ matrix.headers }} no está disponible en este runner"
+            exit 1
+          fi
+
+      - name: Detectar KVER instalado
+        id: kver
+        run: |
+          set -e
+          # elegimos el árbol de headers más nuevo que tenga Makefile utilizable
+          kver=""
+          for d in $(ls -1 /lib/modules | sort -V -r); do
+            if [ -f "/lib/modules/$d/build/Makefile" ]; then kver="$d"; break; fi
+          done
+          if [ -z "$kver" ]; then
+            echo "ERROR: no se encontró ningún /lib/modules/*/build con Makefile"
+            ls -la /lib/modules || true
+            exit 1
+          fi
+          echo "kver=$kver" >> "$GITHUB_OUTPUT"
+          echo "Compilando contra $kver"
+
+      - name: Compilar
+        run: |
+          make clean
+          make -j"$(nproc)" all \
+            KVER="${{ steps.kver.outputs.kver }}" \
+            KSRC="/lib/modules/${{ steps.kver.outputs.kver }}/build"
+
+      - name: El módulo existe y es válido
+        run: |
+          test -f driver/8192eu.ko || { echo "ERROR: driver/8192eu.ko no se generó"; exit 1; }
+          modinfo driver/8192eu.ko
+
+      - name: USB ID del adaptador presente
+        run: |
+          if modinfo driver/8192eu.ko | grep -qi "2357p0126"; then
+            echo "OK: alias USB 2357:0126 (TL-WN8200ND) compilado"
+          else
+            echo "ERROR: falta el alias USB 2357:0126"
+            modinfo driver/8192eu.ko | grep -i alias || true
+            exit 1
+          fi
+
+      - name: Parámetros y features esperados
+        run: |
+          echo "=== PARÁMETROS ==="
+          modinfo -p driver/8192eu.ko \
+            | grep -E "rtw_enusbss|rtw_en_napi|rtw_usb_rxagg|rtw_dynamic_agg|rtw_bw_mode|rtw_trx_path_bmp"
+          echo "=== AP MODE (softAP/hostapd) ==="
+          for sym in rtw_ap_mode_sta_assoc_state_notify rtw_ap_br_port_control rtw_check_beacon_data; do
+            strings driver/8192eu.ko | grep -q "$sym" \
+              && echo "OK: $sym" || { echo "ERROR: falta $sym"; exit 1; }
+          done
+
+      - name: Fix de URB stall recovery presente (AUDIT A1)
+        # Sin el deinit, el work puede despertar sobre un adapter liberado.
+        run: |
+          nm -o driver/8192eu.ko | grep -q "rtw_usb_ep_reset_work_deinit" \
+            && echo "OK: rtw_usb_ep_reset_work_deinit compilado" \
+            || { echo "ERROR: falta el fix de use-after-free (A1)"; exit 1; }
+          grep -q "rtw_usb_ep_reset_work_deinit();" driver/os_dep/linux/usb_intf.c \
+            && echo "OK: se llama desde el path de disconnect" \
+            || { echo "ERROR: no se llama en rtw_dev_remove()"; exit 1; }
+
+      - name: Objetos desactivados NO se compilan (AUDIT 2.1)
+        run: |
+          set -e
+          for o in core/rtw_vht.o core/rtw_beamforming.o core/mesh/rtw_mesh.o \
+                   hal/phydm/phydm_antdiv.o hal/hal_btcoex.o; do
+            if [ -f "driver/$o" ]; then
+              echo "ERROR: $o se compiló y su feature está desactivada"
+              exit 1
+            fi
+          done
+          echo "OK: los objetos de features apagadas no se compilan"
+
+      - name: Nada quedó sin limpiar tras make clean
+        run: |
+          make clean
+          left=$(find driver -name '*.o' -o -name '*.ko' -o -name '.*.cmd' | head -20)
+          if [ -n "$left" ]; then
+            echo "ERROR: make clean dejó objetos atrás:"
+            echo "$left"
+            exit 1
+          fi
+          echo "OK: make clean limpia todo el árbol"
+
+      - name: Subir artefacto (solo validación — NO instalar en Debian)
+        if: always() && matrix.optional == false
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtl8192eu-${{ steps.kver.outputs.kver }}-${{ github.sha }}
+          path: driver/8192eu.ko
+          if-no-files-found: warn
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # 3. El toggle de Bluetooth debe seguir compilando (por si algún día se activa).
+  # ---------------------------------------------------------------------------
+  bt-toggle:
+    name: Build con CONFIG_BT_COEXIST=y
+    needs: sanity
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar toolchain + headers
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc kmod linux-headers-generic
+
+      - name: Activar BT coex y compilar
+        run: |
+          set -e
+          sed -i 's/^CONFIG_BT_COEXIST = n$/CONFIG_BT_COEXIST = y/' driver/Makefile
+          grep -n "^CONFIG_BT_COEXIST" driver/Makefile
+          kver=""
+          for d in $(ls -1 /lib/modules | sort -V -r); do
+            if [ -f "/lib/modules/$d/build/Makefile" ]; then kver="$d"; break; fi
+          done
+          make clean
+          make -j"$(nproc)" all KVER="$kver" KSRC="/lib/modules/$kver/build"
+          test -f driver/8192eu.ko
+          strings driver/8192eu.ko | grep -q "halbtc" \
+            && echo "OK: código BT coex enlazado" \
+            || echo "::warning::BT compiló pero no se detectan símbolos halbtc"

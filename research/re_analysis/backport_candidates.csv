@@ -1,6 +1,0 @@
-type,name,source,description
-string,hal_Associate_8192EU,binary_string,String reference to hal_Associate_8192EU in Windows binary
-import,NdisMIdleNotificationComplete,NDIS.SYS,Windows NDIS power management function: NdisMIdleNotificationComplete
-import,NdisMIdleNotificationConfirm,NDIS.SYS,Windows NDIS power management function: NdisMIdleNotificationConfirm
-import,NdisMIndicateReceiveNetBufferLists,NDIS.SYS,Windows NDIS wireless function: NdisMIndicateReceiveNetBufferLists
-import,NdisMSendNetBufferListsComplete,NDIS.SYS,Windows NDIS wireless function: NdisMSendNetBufferListsComplete
