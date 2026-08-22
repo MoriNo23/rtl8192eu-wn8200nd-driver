@@ -1,20 +1,10 @@
 # ci/ — workflow de GitHub Actions
 
-`ci/workflows/build.yml` es la versión nueva del CI. **Todavía no está activa**: vive aquí
-en vez de en `.github/workflows/` porque el token con el que se abrió el PR no tiene el
-permiso `workflows` de GitHub y el push a esa ruta es rechazado por el servidor.
-
-## Activarlo (una sola vez, desde tu máquina)
-
-```bash
-git checkout main && git pull
-cp ci/workflows/build.yml .github/workflows/build.yml
-git add .github/workflows/build.yml
-git commit -m "ci: activar build-check en pull_request + chequeos de regresión"
-git push
-```
-
-A partir de ahí el CI corre también en los PR, no solo tras el merge.
+**ACTIVA desde 2026-08-22**: la versión vigente es `.github/workflows/build.yml`.
+Históricamente vivía aquí porque el token del PR #2 no tenía el permiso `workflows`
+de GitHub y el push a esa ruta era rechazado por el servidor; se activó con un
+`cp` a `.github/workflows/` desde una máquina local. `ci/workflows/build.yml` se
+conserva como copia de staging — si editas uno, sincroniza el otro.
 
 ## Qué hace
 
