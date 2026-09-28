@@ -27,7 +27,7 @@ Reglas mínimas que imponen las skills:
 
 ## Versionado (DKMS pkg rtl8192eu)
 
-La versión del paquete DKMS (`VER` en install_manual.sh, hoy `1.7.0`) ES el versionado del fork.
+La versión del paquete DKMS (`VER` en install_manual.sh, hoy `1.8.0`) ES el versionado del fork.
 Bump semver: MAJOR.MINOR.PATCH — patch para fixes de build/compat, minor para cambios de
 comportamiento/optimizaciones, major para cambios estructurales. Bump → renombrar
 `/usr/src/rtl8192eu-<old>` → `/usr/src/rtl8192eu-<new>` + `dkms remove/add/build/install --force`.
@@ -35,6 +35,8 @@ comportamiento/optimizaciones, major para cambios estructurales. Bump → renomb
 ### CHANGELOG
 | Versión | Fecha | Cambios |
 |---------|-------|---------|
+| 1.8.1 | 2026-09-28 | **Fix de build al activar GRO**: la etiqueta `next:` de `napi_recv()` (`recv_linux.c`) estaba **borrada** desde el commit `5507d47`, que la eliminó para callar `-Wunused-label`. Ese aviso solo aparecía con `CONFIG_RTW_GRO=n`, porque el `goto next` está dentro de `#ifdef CONFIG_RTW_GRO`; al activar GRO el `goto` vuelve a compilarse y se queda sin destino → **el driver no compilaba**. Etiqueta restaurada tal cual el upstream (`clnhub/rtl8192eu-linux`, rama `5.11.2.3`) |
+| 1.8.0 | 2026-09-28 | **Silencio en runtime + throughput**: `CONFIG_RTW_DEBUG=n` (fuera el 74% de líneas `RTW:`) y `CONFIG_PROC_DEBUG=n` (cierra la única vía de escritura de `dm->debug_components`); `monitoring/` eliminado y job de Hermes dado de baja; herramientas de antena migradas a `iw dev ... station dump`; TX power al objetivo del efuse (watchdog retirado, región US intacta); `CONFIG_TXPWR_LIMIT`/`_EN`/`BY_RATE_EN` activos; `rtw_usb_rxagg_mode=1` + GRO + NAPI; comentarios falsos corregidos; CI con sparse+smatch+checkpatch contra baseline, build `debian:trixie` 6.12 y aserciones de config; `docs/USB-LINK-HANG.md` |
 | 1.7.0 | 2026-08-22 | **Bitrate/senal visible en NetworkManager y KDE plasma-nm**: `.dump_station` registrado en cfg80211_ops con rama cliente (delega en `get_station`, llena `TX_BITRATE`); el dump de NM (`NLM_F_DUMP`) devolvía vacío porque la función original solo recorre estaciones asociadas (rol AP). Tasas **dinámicas** reales (RA del firmware vía C2H + RX por paquete con `rtw_desc_rate_to_bitrate`), no el techo negociado; también en wext (`rtw_wx_get_rate`). **Pentest**: `CONFIG_WIFI_MONITOR=y` por defecto y fix de inyección — `rtw_monitor_xmit_entry` rechazaba cualquier radiotap cuyo largo no fuera exactamente 12 (aircrack-ng/hcxdumptool/mdk4 emiten otros largos = "no injection"); ahora acepta headers bien formados y respeta el flag FCS |
 | 1.6.4 | 2026-08-22 | CI reparado y en verde: workflow activado (pull_request + sanity + build con KVER autodetectado); fix modpost (`hal_phy.o` incondicional, `CONFIG_PSD_TOOL=y`); aserciones AP con símbolos reales; artefacto se sube antes del clean |
 | 1.6.3 | 2026-08-22 | HT40 reactivado (0x20→0x21); **fix use-after-free** del work de URB stall (`cancel_work_sync` en disconnect); contador propio de stalls USB; orden EPIPE/escalado corregido; `make clean` arreglado; 10 ficheros clon (Windows) eliminados; 1 MB menos de fuente compilada; skills obligatorias; `docs/AUDIT.md` |
@@ -56,10 +58,13 @@ Driver WiFi USB: TL-WN8200ND(UN) V3.0 (RTL8192EU). DVD oficial V2.0.
 | Flag | Valor | Razón |
 |------|-------|-------|
 | `-O2` | habilitado | Estándar Realtek, código más chico (mejor caché en CPU vieja). Antes -O3 (2026-08-08) |
-| `CONFIG_RTW_DEBUG` | y | Logs debug activos (dmesg) |
-| `CONFIG_PROC_DEBUG` | y | /proc/net/rtl8192eu/ interfaces |
+| `CONFIG_RTW_DEBUG` | **n** (1.8.0; era y) | Sin logging en runtime. `RTW_INFO`/`RTW_WARN`/`RTW_DBG` son no-ops y el parámetro `rtw_drv_log_level` desaparece. Coste asumido: los parches propios ya no se ven en dmesg |
+| `CONFIG_PROC_DEBUG` | **n** (1.8.0; era y) | Sin `/proc/net/rtl8192eu/`. Cierra además la única vía de escritura de `dm->debug_components`, así que el debug de phydm queda **inalcanzable**, no solo silenciado |
 | `CONFIG_RTW_NAPI_DYNAMIC` | sí | Desactiva NAPI en bajo throughput (<100 Mbps) |
-| `CONFIG_RTW_GRO` | n | Desactivado para reducir latencia |
+| `CONFIG_RTW_GRO` | **y** (1.8.0; era n) | Coalescencia de tramas. La premisa de que estaba apagado ("sin buffering por `rxagg_mode=0`") era falsa |
+| `CONFIG_TXPWR_LIMIT` / `_EN` | **y** (1.8.0; era n) | El driver calcula el límite del regdomain en vez de emitir `lmt`/`ulmt` = `NA`. Bajo US no recorta nada a 13 dBm: es una garantía, no una ganancia |
+| `CONFIG_TXPWR_BY_RATE_EN` | **y** (1.8.0; era n) | Escalado de potencia por tasa (menos potencia en MCS alto) |
+| `CONFIG_PSD_TOOL` | y | **No se toca**: el macro vive en `phydm_features_iot.h:147`; apagarlo desde aquí rompe el enlazado. Ver design.md D2 |
 | `CONFIG_AP_MODE` | y | softAP/hostapd (desde 1.6.2; Evil Twin/KARMA) |
 | `CONFIG_WIFI_MONITOR` | y | Monitor + inyección pentest (desde 1.7.0; antes n) |
 | `CONFIG_P2P` | n | No usado |
@@ -73,9 +78,17 @@ Driver WiFi USB: TL-WN8200ND(UN) V3.0 (RTL8192EU). DVD oficial V2.0.
 | `CONFIG_RTW_ADAPTIVITY_MODE` | carrier_sense | Modo carrier sense |
 
 ## Parámetros hardcodeados (source)
-- `rtw_en_napi = 0` — NAPI desactivado (estabilidad USB)
-- `rtw_usb_rxagg_mode = 0` — agreación USB desactivada
-- `rtw_dynamic_agg_enable = 0` — agregación dinámica desactivada
+Defaults en `driver/os_dep/linux/os_intfs.c`. Los valores **efectivos** salen de
+`/etc/modprobe.d/*.conf`, que gana en el `modprobe`.
+
+- `rtw_en_gro = 1` (1.8.0; era 0) — coalescencia de tramas. Solo opera si NAPI
+  está activo: con `en_napi==0` el propio driver pone `en_gro=0` (`os_intfs.c:1499`).
+- `rtw_en_napi = 0` — NAPI desactivado por defecto en el source. En el despliegue
+  se pone a 1 desde `8192eu.conf` (ver tabla de parámetros runtime).
+- `rtw_usb_rxagg_mode = 1` (1.8.0; era 0) — RX_AGG_DMA con umbral del driver.
+  ⚠️ Un valor distinto de 1 y 2 es **sustituido en silencio** por DMA
+  (`usb_halinit.c:115-116`), y el modo disable es inalcanzable. Ver design.md D5.
+- `rtw_dynamic_agg_enable = 0` — agregación dinámica de TX desactivada
 
 ## MIMO
 - `rtw_trx_path_bmp=0x11` — **1T1R forzado (solo antena A/path 0)** — ver parche abajo
@@ -102,7 +115,12 @@ Resultado: ping gateway 0% loss (antes stalls de 1-51 fallos), señal -44 dBm,
 tx bitrate 300 Mbps. Script de chequeo: `~/.local/bin/wn8200nd-antenna`.
 
 ## USB Stability
-- `MAX_CONTINUAL_IO_ERR=80` (era 10→30→80, evita surprise_removed en channel switch)
+- `MAX_CONTINUAL_IO_ERR=80` (era 10→30→80, evita surprise_removed en channel switch).
+  ⚠️ El valor se elige por la **ventana temporal** del cambio de canal (200-500 ms de
+  silencio de radio ⇒ ~800 ms de tolerancia). La justificación original en el comentario
+  del fuente ("con `rtw_usb_rxagg_mode=0` no hay buffering") era **falsa** y se corrigió
+  el 2026-09-28; el umbral **se conserva** (revertirlo sería un cambio de comportamiento
+  sin evidencia). Ver design.md D5 y el comentario en `driver/include/rtw_io.h`.
 - `MAX_USB_STALL_ERR=200` (2026-08-22) — contador propio para `-EPIPE`/`-EPROTO`. Antes se
   reseteaba el contador general de forma incondicional y un endpoint permanentemente colgado
   nunca escalaba: interfaz muerta en silencio.
@@ -129,7 +147,14 @@ callback URB, duerme). Piezas obligatorias — **no tocar sin leer esto**:
 | `rtw_rxgain_offset_2g` | 0 | Sin atenuación LNA (2026-08-08: era 4; con señal débil atenuar empeora sensibilidad — medido +19 dB y 3.2x throughput) |
 | `rtw_notch_filter` | 1 | Filtro notch |
 | `rtw_smart_ps` | 0 | Sin ahorro energía |
-| `rtw_bw_mode` | 0x21 | **HT40 activo en 2.4G** (2026-08-22: reactivado; era 0x20/HT20 desde 2026-08-08). Bit 0-3 = 2.4G, bit 4-7 = 5G. Default del source (`os_intfs.c:246`) ya es 0x21 | [CONF SISTEMA ALINEADA 2026-08-22 noche: /etc/modprobe.d/8192eu.conf ahora 0x21, verificado 40 MHz negociado en vivo]
+| `rtw_usb_rxagg_mode` | 1 | **Agregación de RX USB = RX_AGG_DMA con umbral del driver** (`size=8` kB, `timeout=8`×32 µs). ⚠️ Antes era `0` con el comentario "0:disable (estabilidad USB)", lo cual era **falso**: `usb_halinit.c:115-116` sustituye por `RX_AGG_DMA` todo valor que no sea DMA ni USB, y a continuación (línea 123-125) le asigna el umbral. `0` y `1` dan un estado **bit a bit idéntico**; el modo disable es **inalcanzable** por este parámetro. Ver design.md D5 |
+| `rtw_en_napi` | 1 (desde 1.8.0) | Entrega coalescente de tramas. Era `0`; la premisa que lo justificaba ("sin buffering por `rxagg_mode=0`") era falsa |
+| `rtw_bw_mode` | 0x21 | HT40 **configurado** en 2.4G (bit 0-3 = 2.4G, bit 4-7 = 5G; default del source `os_intfs.c:246` ya es 0x21). ⚠️ **Configurado no es negociado**: 40 MHz solo se negocia si el AP lo anuncia **y** está en un canal primario válido. El AP `escama` está en **canal 3**, que en 2.4 GHz no es un canal primario HT40 válido, así que con este AP el enlace se queda en **20 MHz** por muy bien que el parámetro valga 0x21. Para negociar 40 MHz hay que (a) mover el AP a canal 1, 5, 9 o 11 y (b) que anuncie HT40+ — cambio de canal que vive en el repo `MoriNo23/escama-ap`, fuera de este |
+
+**Regla de lectura de esta tabla:** un parámetro escrito en `8192eu.conf` no
+garantiza por sí solo el efecto que su nombre sugiere. Para el ancho de banda hay
+que mirar `iw dev wn8200nd info` (HT20/HT40 negociado) y para la potencia
+`iw dev wn8200nd info` (txpower), no el fichero de modprobe.
 
 ### Init override (parche aplicado)
 `phydm_set_l2h_th_ini_carrier_sense()` en `driver/hal/phydm/phydm_adaptivity.c:350`
@@ -148,41 +173,56 @@ th_h2l = th_l2h - th_edcca_hl_diff
 Con th_l2h_ini=15, igi~0x35: l2h_dyn_min=65, th_l2h=IGI(~53), th_h2l=48.
 En NORMAL mode (adaptivity disabled): `th_l2h = max(igi + TH_L2H_DIFF_IGI, EDCCA_TH_L2H_LB)`.
 
-## Debug (DBG_ADPTVTY)
-Activar logs EDCCA en dmesg via proc:
-```
-echo "dbg 13 1" | sudo tee /proc/net/rtl8192eu/wn8200nd/odm/cmd
-```
-Bit 13 = DBG_ADPTVTY (0x2000). Se pierde al recargar módulo.
-Comandos phydm_debug disponibles:
-- `dbg 100` — mostrar componentes debug activos
-- `dbg <N> 1` — habilitar bit N
-- `dbg <N> 2` — deshabilitar bit N
-- `dbg 101` — deshabilitar todos
+## EDCCA: qué se puede mirar y cómo (sin debug en runtime)
 
-Logs cada ~2s muestran:
-```
-[PHYDM] mode = CARRIER SENSE
-[PHYDM] th_l2h_ini = 15, th_edcca_hl_diff = 5
-[PHYDM] IGI = 0x35, th_l2h = -47 dBm, th_h2l = -52 dBm
-```
+El debug de phydm (`dbg 13 1` = `DBG_ADPTVTY`, bit 13) **ya no es alcanzable**:
+`rtw_odm_proc_write()` (`driver/os_dep/linux/rtw_proc.c`) es el **único**
+escritor de `dm->debug_components`, y con `CONFIG_PROC_DEBUG=n` ese fichero no
+se compila. No hay sustituto: ni parámetro de módulo, ni ioctl, ni comando de
+vendor.
 
-## Procfs debug
-`/proc/net/rtl8192eu/wn8200nd/odm/`:
-- `adaptivity` — read/write th_l2h_ini y th_edcca_hl_diff (write: formato `0xNN MM`, hex+decimal)
-- `cmd` — comandos phydm_debug (formato `dbg 13 1`)
-- `/proc/net/rtl8192eu/wn8200nd/rx_signal` — RSSI, señal por path RF
-- `/proc/net/rtl8192eu/wn8200nd/rx_stat` — estadísticas RX
-- `/proc/net/rtl8192eu/wn8200nd/survey_info` — APs visibles por canal
+`DBG 1` sigue en `driver/include/autoconf.h:274` a propósito, así que
+`phydm_debug.c` **se sigue compilando y enlazando** (apagar `DBG` lo vaciaría y
+reproduciría el fallo de modpost de `phydm_psd.o`). Los macros `PHYDM_DBG` no
+dependen de `CONFIG_RTW_DEBUG`: se gobiernan en runtime por el bitmask, que
+ahora está permanentemente en 0. Compilado, inalcanzable, inerte.
 
-Sysfs module params: `/sys/module/8192eu/parameters/`
-⚠️ Escribir a sysfs NO propaga a registry_priv ni a dm->edcca_mode.
-Son variables separadas: module_param se copia a registry_priv solo al init.
+Lo que sí se puede observar del estado EDCCA, sin depuración:
+
+- **Valores de config** (los que importan): están en
+  `/etc/modprobe.d/8192eu.conf` y en `/sys/module/8192eu/parameters/`
+  (lectura). Ver la tabla de «Parámetros runtime».
+- **Comportamiento observable**: desensibilización por ruido vecinal se manifiesta
+  como **caída de throughput sin caída de señal** mientras `rtw_rxgain_offset_2g`
+  está en 0. Esa es la firma a buscar cuando «el enlace va bien pero va lento».
+
+⚠️ La trampa de siempre: **escribir a `/sys/module/8192eu/parameters/` NO
+propaga a `registry_priv` ni a `dm->edcca_mode`.** Son variables separadas; el
+`module_param` se copia a `registry_priv` solo en el init del módulo. El único
+modo que funciona es editar `8192eu.conf` y recargar.
+
+## Invariantes del despliegue — NO TOCAR
+
+Estas cosas se dio por suppressa y romperlas degrada la máquina en silencio.
+Cada una tiene una aserción en el CI salvo donde se indica.
+
+| Invariante | Valor / regla | Por qué |
+|---|---|---|
+| **Región regulatoria** | `US: DFS-FCC`, **de la red**, no de nosotros. **Nunca** `iw reg set`, **nunca** `rtw_country_code`, **nunca** tocar `cfg80211` domain. | Viene del country IE del AP. Forzar un código de país a mano desincroniza el dominio del mundo real y es ilegal. La aserción del CI solo verifica que **no exista** ninguna orden de `reg set` en el repo ni en `/etc`. |
+| **Agregación de RX USB** | `rtw_usb_rxagg_mode=1` (RX_AGG_DMA con umbral del driver). **Los valores ≠1 y ≠2 se sustituyen en silencio** por DMA. | El modo disable es inalcanzable por este parámetro. Aserción de CI anti-sustitución (tarea 1.6). |
+| **Objetivo de TX power** | El del **efuse** (2.4G ruta A: CCK 16 / OFDM 14 / HT 13 dBm). **Ningún proceso** mantiene potencia fija. | El watchdog que forzaba 20 dBm se retiró (1.8.0). `CONFIG_TXPWR_LIMIT_EN=y` recorta contra el regdomain. Aserción de CI: ninguna unidad systemd ni script llama a `set txpower fixed`. |
+| **1T1R forzado** | `rtw_trx_path_bmp=0x11`. Revertir a `0x33` **solo** cuando se resuelda el conector de la antena B. | Conector B desoldado. Con 2×2 el driver depende de la path muerta. |
+| **El dongle es la WAN de `escama`** | `AP_IFACE=stonepi` (Intel interno), `WAN_IFACE=wn8200nd`. | Un flapeo del dongle corta internet a **todos** los clientes del AP, no solo a esta máquina. Primera pregunta cuando se investigue un corte de red en casa. Ver `docs/USB-LINK-HANG.md`. |
+| **Canal 3 = HT20** | `rtw_bw_mode=0x21` está configurado pero el AP está en canal 3, que **no** es canal primario HT40 válido ⇒ el enlace se queda en **20 MHz**. | Configurado ≠ negociado. Mover el canal del AP a 1/5/9/11 es change aparte, en el repo `escama-ap`. |
+| **`CONFIG_PSD_TOOL=y`** aunque no se use | El macro vive en `phydm_features_iot.h:147`; apagarlo desde el Makefile rompe el enlazado. | Dualidad conocida. El CI comprueba que `phydm_psd.o` **sí** se compila. Ver el comentario en `driver/Makefile:68`. |
+| **`DBG 1`** | Se mantiene a propósito. | `phydm_debug.c` está entero dentro de `#if DBG`; `DBG 0` lo deja vacío y reintroduce el fallo de modpost. Inerte en runtime porque el bitmask no tiene escritor. |
 
 ## DKMS
-- **dkms instalado** (3.2.2) y driver **registrado**: `rtl8192eu/1.7.0` (AUTOINSTALL=yes)
-- Source DKMS: `/usr/src/rtl8192eu-1.7.0/` — **sync del repo parcheado** (rsync manual tras cada cambio relevante:
-  `sudo rsync -a --delete --exclude '.git' --exclude '*.o' --exclude '*.ko' --exclude '*.cmd' --exclude '*.mod*' --exclude '.tmp_versions' --exclude 'Module.symvers' --exclude 'modules.order' ./ /usr/src/rtl8192eu-1.7.0/`)
+- **dkms instalado** (3.2.2) y driver **registrado**: `rtl8192eu/1.8.0` (AUTOINSTALL=yes)
+- Source DKMS: `/usr/src/rtl8192eu-1.8.0/` — **sync del repo parcheado**, y lo hace
+  `install_manual.sh` solo (step 3a, `rsync -a --delete`); ya no hace falta el rsync a mano.
+  El directorio de la versión anterior (`/usr/src/rtl8192eu-1.7.0/`) se puede borrar
+  cuando el `dkms status` ya solo muestra 1.8.0.
 - **Kernel updates: regeneración AUTOMÁTICA** con los parches (1T1R + EDCCA + EPIPE). El .ko de DKMS
   (`updates/dkms/8192eu.ko.xz`) tiene PRIORIDAD sobre el manual.
 - Instalación/actualización (ÚNICO script, v4): `sudo ./install_manual.sh` — sync source
@@ -194,6 +234,60 @@ Son variables separadas: module_param se copia a registry_priv solo al init.
 - Script de recarga: versionado en `scripts/reload-wn8200nd-1ant`, instalado a
   `~/.local/bin/reload-wn8200nd-1ant` por install_manual.sh
 - Parámetros configurables: `/etc/modprobe.d/8192eu.conf` (EDCCA) + `/etc/modprobe.d/rtl8192eu.conf` (paths/1T1R)
+
+## Verificación — **TODO va por GitHub Actions, nada en local**
+
+**No compiles ni analices estáticamente el árbol en la máquina de desarrollo.**
+Ni `make`, ni `sparse`, ni `smatch`, ni `checkpatch`. Push al repo y mira el
+resultado. Esta regla no es una preferencia de estilo: la máquina de desarrollo
+es la de uso diario del usuario, y compilar este driver contra los headers del
+kernel local tarda lo suficiente como para que acabe corriéndose en segundo
+plano, produciendo un `.ko` rancio que se instala sin haber pasado por el CI.
+
+### El flujo
+
+1. Editas el árbol.
+2. `git commit` y `git push` (o abres PR contra `main`).
+3. El workflow `CI — build check` corre:
+   - `sanity` — comprobaciones de árbol, sin compilar. Falla pronto.
+   - `build` — compila contra los headers del runner (compatibilidad hacia delante).
+   - `build-debian` — compila en `debian:trixie` contra **headers 6.12**, que es
+     el kernel del despliegue real.
+   - `static-analysis` — sparse + smatch + checkpatch contra un baseline versionado.
+   - `config-assertions` — la configuración distribuida es la esperada.
+   - `vm-load-test` — carga y descarga REALES del módulo en una VM (QEMU, kernel
+     6.12 del despliegue): ciclo `insmod`/`rmmod`, `dmesg` capturado, y cero
+     líneas `RTW:`. ⚠️ **Un contenedor no puede hacer esto**: comparte el kernel
+     del host, así que `insmod` desde un contenedor carga el módulo en la máquina
+     (verificado: el módulo aparece en el `/proc/modules` del host). Ver
+     `ci/vm/README.md`.
+   - `bt-toggle` — el interruptor de Bluetooth sigue compilando.
+4. Todo en verde, y solo entonces instalas en la máquina.
+
+### Por qué el CI y no el local
+
+- Compila contra **dos** familias de kernel: los headers de Ubuntu del runner y
+  los headers 6.12 de Debian en contenedor. Un `vermagic` o un `__attribute__`
+  que solo exista en una de las dos pasaría el local y rompe en la máquina.
+- El `static-analysis` compara contra un **baseline** versionado, así que no está
+  rojo de salida: solo falla ante hallazgos **nuevos**. El baseline se genera
+  desde el propio CI con `ci/static-analysis.sh <tool> --update-baseline`.
+
+### Lo único que sí se hace en local
+
+- Editar ficheros. `git`. El reinicio de NetworkManager.
+- **Medir en hardware** (throughput, señal, estabilidad): eso solo existe en la
+  máquina y es la única verificación que el CI no puede hacer por ti.
+- `sudo ./install_manual.sh` — que compila e instala. Es **deployment**, no
+  verificación: se hace después de que el CI haya pasado, nunca en su lugar.
+
+### Las skills de análisis, excepción consciente
+
+Las herramientas que el repo prescribe para investigar (`cscope`, Coccinelle,
+`bloat-o-meter`, las de las skills de análisis estático) se siguen usando en local
+cuando la tarea **es** analizar o medir, porque no existen como job de CI. La
+regla de arriba va sobre la *verificación de cambios del driver*, no sobre las
+herramientas de investigación.
 
 ## Testing con el adaptador — regla obligatoria
 
@@ -213,28 +307,52 @@ Sin excepciones: el usuario sigue usando la máquina entre pruebas. Si un test
 falla a mitad de camino, la restauración corre IGUAL (usar `;` en vez de `&&`
 en la parte de limpieza, nunca dejar la interfaz en monitor).
 
-## Monitoreo pasivo
-`monitoring/rx_drop_watchdog.sh` vía cron cada 30min (job Hermes rx-drop-watchdog):
+## Diagnóstico sin debug en runtime
 
-- Lee rx_dropped/rx_packets de sysfs, compara con último estado
-- Escribe CSV en `monitoring/rx_drop_monitor_YYYY-MM-DD_HHMMSS.csv` (uno por ejecución)
-- Filtra falsos positivos: interfaz down, sin IP/gateway, contadores reseteados
-- Solo alerta cuando drops > 0
-- Cron (Hermes): rx-drop-watchdog, job_id 1db902a53a75
+Desde 1.8.0 el driver es **silencioso en runtime**: `CONFIG_RTW_DEBUG=n` y
+`CONFIG_PROC_DEBUG=n`. No hay logging periódico, no hay `/proc/net/rtl8192eu/`,
+y no existe ninguna vía (fichero, parámetro de módulo, ioctl o comando de
+vendor) para activar el bitmask de debug de la capa PHY en caliente.
 
-`monitoring/dig_fa_watchdog.sh`: muestrea fa_cnt e IGI del DIG (habilita DBG_DIG
-6s vía odm/cmd, luego lo apaga — no toca la red). Escribe CSV en
-`monitoring/dig_fa_monitor_*.csv`. fa_cnt >800 = tormenta de falsas alarmas =
-episodio de desensibilizacion (ver [[vault/Sordera por ruido vecinal]]). Con días
-de CSV se ven los horarios de los vecinos ruidosos.
+Eso tiene un coste: **no se puede depurar en vivo**. Se asume a cambio de no
+pagar 2.908 líneas `RTW:` en cada arranque. Lo que queda es:
+
+| Para diagnosticar | Usar |
+|---|---|
+| ¿Es un fallo del enlace USB o del driver? | `docs/USB-LINK-HANG.md` — señales del log del núcleo, y por qué ningún parche puede alcanzar ese fallo |
+| ¿El driver compiló y enlazó? | Las aserciones de CI (`sanity`, `build`, `build-debian`, `config-assertions`) |
+| ¿El driver cargó en esta máquina? | `lsmod \| grep 8192eu`, `dmesg \| grep -i 8192eu` (errores del core, no del driver) |
+| ¿Cuál es la señal / el ancho negociado? | `wn8200nd-antenna --once`, `iw dev wn8200nd info` |
+| ¿Qué parámetro afecta a la sensibilidad? | `docs/RF-SENSITIVITY.md` |
+
+El criterio de clasificación: si el dispositivo **no** aparece en `lsusb`, es
+el enlace USB y no hay nada que el driver pueda hacer. Si aparece pero no carga
+el módulo, es del driver, y el CI dice por qué.
+
+### Lo que se eliminó y por qué (2026-09-28)
+
+- `monitoring/rx_drop_watchdog.sh` + su CSV, y el job de Hermes
+  `rx-drop-watchdog` (id `1db902a53a75`, dado de baja). **La monitorización nunca
+  se ejecutó**: cero `rx_drop_monitor_*.csv` en el repo y la tabla `executions`
+  del cron vacía. Se pagaba ruido en cada arranque a cambio de nada.
+- `monitoring/dig_fa_watchdog.sh`: muestreaba `fa_cnt` del DIG, pero su única vía
+  de datos era `odm/cmd` y `/proc/net/rtl8192eu/`, que desaparece con
+  `PROC_DEBUG=n`. Sin fuente, sin script.
+- El paso 7 de `scripts/reload-wn8200nd-1ant` (`dbg 13 1`) **reactiva el debug de
+  adaptividad en cada recarga del módulo**. Eliminado: un script de recarga no
+  debe dejar superficie de depuración activa.
 
 ## Parámetros Runtime Ajustables
 ```
 rtw_adaptivity_th_l2h_ini      # threshold L2H adaptivity (default 0)
 rtw_adaptivity_th_edcca_hl_diff  # diff H-L EDCCA (default 0, override->7 si 0)
-rtw_rxgain_offset_2g             # atenuación LNA en 2.4GHz (default 0, nuestro 4)
+rtw_rxgain_offset_2g             # ganancia LNA en 2.4GHz (default 0, medido: 4 empeora)
 rtw_notch_filter                 # filtro notch (default 0, nuestro 1)
 rtw_smart_ps                     # PS inteligente (default 2, nuestro 0)
 rtw_napi_threshold               # Mbps threshold para dynamic NAPI (default 100)
 rtw_ampdu_factor                 # AMPDU aggregation (default 7)
+rtw_hiq_filter                   # filtro desbalance IQ (default 1, NO medido)
 ```
+
+Ver `docs/RF-SENSITIVITY.md` para la tabla completa de parámetros de ganancia y
+filtrado de recepción, con su coste en sensibilidad y su procedimiento de A/B.

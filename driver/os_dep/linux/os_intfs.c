@@ -142,10 +142,32 @@ int rtw_check_fw_ps = 1;
 int rtw_early_mode = 1;
 #endif
 
-int rtw_usb_rxagg_mode = 0;/* 0:disable (estabilidad USB), 1:RX_AGG_DMA, 2:RX_AGG_USB */
+/*
+ * rtw_usb_rxagg_mode — modo de agregacion de RX en el enlace USB.
+ *
+ * Valores HONRADOS por el driver (ver driver/hal/rtl8192e/usb/usb_halinit.c:111-137):
+ *   1 = RX_AGG_DMA  (agrega en la MAC, umbral del driver: size=8 kB, timeout=8*32us)
+ *   2 = RX_AGG_USB  (agrega en el controlador USB, size/timeout calculados de
+ *                    MAX_RECVBUF_SZ)
+ * CUALQUIER OTRO VALOR (0, 3, negativos) es SUSTITUIDO EN SILENCIO por
+ * RX_AGG_DMA en usb_halinit.c:115-116. O sea: este parámetro NO puede desactivar
+ * la agregacion de RX. Poner 0 no la desactiva, la coacciona a DMA con umbral.
+ *
+ * 2026-09-28: el default era 0 con el comentario "0:disable (estabilidad USB)",
+ * lo cual era doblemente falso (no desactiva la agregacion, y la estabilidad
+ * nunca estuvo condicionada a este valor). Ver design.md D5.
+ */
+int rtw_usb_rxagg_mode = 1;/* 1:RX_AGG_DMA (unico valor con umbral del driver
+			       2:RX_AGG_USB. Cualquier otro valor se coacciona a 1:
+			      ver usb_halinit.c:115-116. */
 module_param(rtw_usb_rxagg_mode, int, 0644);
 
-int rtw_dynamic_agg_enable = 0;/* 0:disable (estabilidad USB) */
+/*
+ * rtw_dynamic_agg_enable — aggregacion DINAMICA de TX (distinto de la de RX de
+ * arriba). 0 = desactivada. Se mantiene en 0: el prefijo de TX se dimensionó con
+ * la configuracion estable, no es parte de este change.
+ */
+int rtw_dynamic_agg_enable = 0;/* 0:disable */
 module_param(rtw_dynamic_agg_enable, int, 0644);
 
 /* set log level when inserting driver module, default log level is _DRV_INFO_ = 4,
@@ -935,8 +957,24 @@ module_param(rtw_napi_threshold, int, 0644);
 #ifdef CONFIG_RTW_GRO
 /*following setting should define GRO in Makefile
 enable gro = 1, disable gro = 0*/
-int rtw_en_gro = 0; /* disabled by default for CPU optimization */
+/*
+ * rtw_en_gro — coalescencia de tramas en el camino de RX de NAPI.
+ *
+ * 2026-09-28: default cambiado de 0 a 1 (1.8.0). El valor anterior venia con
+ * el comentario "disabled by default for CPU optimization", es decir asumiendo
+ * que la CPU era el recurso escaso y la entrega por trama la victoria. Medido
+ * al reves: la entrega por trama limita la descarga, que es la prioridad de
+ * este despliegue, y la CPU sobra con 1T1R. La premisa que justificaba
+ * apagarlo (que la agregacion USB estaba desactivada) era falsa, ver design.md
+ * D5 y D6.
+ *
+ * Requisito de uso: GRO solo opera si NAPI esta activo. Si en_napi==0,
+ * rtw_recv_info_var_init() (os_intfs.c:~1499) pone en_gro=0 automaticamente.
+ * O sea, activar GRO sin NAPI no hace nada, no rompe nada.
+ */
+int rtw_en_gro = 1;
 module_param(rtw_en_gro, int, 0644);
+MODULE_PARM_DESC(rtw_en_gro, "0:disable, 1:enable (solo con NAPI; default 1)");
 #endif /* CONFIG_RTW_GRO */
 #endif /* CONFIG_RTW_NAPI */
 

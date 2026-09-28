@@ -64,6 +64,14 @@ jobs:
           fi
           echo "OK: árbol limpio"
 
+      - name: "El script de recarga es seguro y no activa depuracion"
+        # (a) no escribe en el procfs de debug (ya no existe con PROC_DEBUG=n),
+        # (b) devuelve la interfaz a managed aunque un paso intermedio falle, que
+        #     es la regla obligatoria de AGENTS.md comprobada como codigo.
+        # Corre con stubs: el script real llama a rmmod/modprobe, y en la
+        # maquina del runner eso no se hace nunca.
+        run: ci/test-reload-script.sh
+
       - name: La versión está sincronizada en todos los sitios
         run: |
           set -e
@@ -196,6 +204,224 @@ jobs:
           echo "OK: make clean limpia todo el árbol"
 
   # ---------------------------------------------------------------------------
+  # 5. Analisis estatico con baseline.
+  #
+  # El arbol es de vendor: checkpatch sobre driver/ produce miles de avisos
+  # heredados de Realtek. Un job en blanco estaria rojo desde el primer dia y
+  # nadie lo miraria. El baseline convierte el job en una alerta de REGRESION:
+  # falla solo ante hallazgos NUEVOS.
+  #
+  # El baseline se versiona y el job FALLA si falta o esta vacio. Sin esa
+  # comprobacion, borrar el fichero convertiria el job en un no-op silencioso,
+  # que es el fallo clasico de este patron.
+  # ---------------------------------------------------------------------------
+  static-analysis:
+    name: Static analysis (sparse + smatch + checkpatch)
+    needs: sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Toolchain: sparse (distro) + smatch (fuente)"
+        run: |
+          set -e
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            build-essential bc kmod perl flex bison libz-dev \
+            sqlite3 libsqlite3-dev libssl-dev \
+            libdbd-sqlite3-perl libtry-tiny-perl \
+            sparse linux-headers-generic linux-source
+          # sparse: el del paquete de la distro. NO se usa el `sparsec` del arbol
+          # de smatch, que es un wrapper que delega en sparse-llvm y sin LLVM
+          # compilado solo imprime "llvm-config: not found" mas errores de
+          # enlace. El sparse de la distro es el que usa el propio kernel.
+          which sparse
+          sparse --version
+          # smatch si se construye desde fuente: no hay paquete en Ubuntu, y el
+          # analisis de valores (smatch) es distinto del de tipos (sparse), asi
+          # que van como herramientas separadas y con su propia seccion de
+          # baseline (design.md D7).
+          cd "$RUNNER_TEMP"
+          git clone --depth 1 https://github.com/error27/smatch.git
+          cd smatch
+          sudo make -j"$(nproc)"
+          echo "SMATCH_BIN=$RUNNER_TEMP/smatch/smatch" >> "$GITHUB_ENV"
+          ls -la "$SMATCH_BIN"
+          # checkpatch.pl del paquete linux-source. El paquete deja el tarball
+          # en un symlink /usr/src/linux-source-<ver>.tar.<ext> cuya extension
+          # depende de la version (xz en trixie, bz2 en Ubuntu 24.04), asi que
+          # se busca sin asumir extension.
+          src=$(find /usr/src -maxdepth 1 -name 'linux-source*.tar.*' | head -1)
+          test -n "$src" || { echo "::error::no se encontro el tarball de linux-source"; exit 1; }
+          echo "checkpatch source: $src"
+          mkdir -p "$RUNNER_TEMP/lksrc"
+          tar -C "$RUNNER_TEMP/lksrc" -xf "$src" --strip-components=1 \
+              --wildcards '*/scripts/*'
+          echo "CHECKPATCH=$RUNNER_TEMP/lksrc/scripts/checkpatch.pl" >> "$GITHUB_ENV"
+          ls -la "$CHECKPATCH"
+
+      - name: El baseline existe y no esta vacio
+        # Comprobacion explicita y visible: si el baseline desaparece, el job
+        # tiene que fallar aqui, no pasar en silencio.
+        run: |
+          set -e
+          b=ci/static-analysis-baseline.txt
+          test -f "$b" || { echo "::error::no existe $b"; exit 1; }
+          n=$(grep -vc '^#' "$b" || true)
+          [ "$n" -gt 0 ] || { echo "::error::$b esta vacio"; exit 1; }
+          echo "OK: baseline con $n entradas"
+          # Debe haber entradas de las tres herramientas.
+          for t in sparse smatch checkpatch; do
+            grep -q "^## $t" "$b" || { echo "::error::el baseline no tiene entradas de $t"; exit 1; }
+            echo "OK: baseline incluye $t"
+          done
+
+      - name: "Generar o verificar las tres herramientas"
+        # --all: una sola pasada. No es estetico, es rendimiento: checkpatch
+        # sobre driver/ tarda ~13 min porque recorre 591 ficheros uno a uno, y
+        # hacerlos por separado seria repetir ese trabajo tres veces.
+        run: ci/static-analysis.sh --all
+
+      - name: "Resumen por herramienta"
+        run: |
+          for t in sparse smatch checkpatch; do
+            n=$(awk -v tool="$t" '/^## /{i=($2==tool);next} /^#/{next} i' \
+                ci/static-analysis-baseline.txt | wc -l)
+            echo "  $t: $n hallazgos en el baseline"
+          done
+
+  # ---------------------------------------------------------------------------
+  # 6. Aserciones de la configuracion distribuida.
+  #
+  # Comprueban sobre el TEXTO del arbol lo que el despliegue depende, de modo
+  # que revertir una opcion falle la integracion en vez de degradar la maquina
+  # en silencio. Las que dependen del .ko compilado (phydm_psd.o, rtw_proc.o,
+  # simbolos) estan en los jobs build y build-debian; aqui van las que se
+  # pueden comprobar sin compilar.
+  # ---------------------------------------------------------------------------
+  config-assertions:
+    name: Aserciones de configuracion
+    needs: sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Los flags de silencio y de RF son los previstos
+        run: |
+          set -e
+          expect() {
+            local flag="$1" want="$2" got
+            got=$(sed -n "s/^$flag *= *\(.*\)/\1/p" driver/Makefile | head -1 | sed 's/[[:space:]]*$//')
+            if [ "$got" = "$want" ]; then
+              echo "OK: $flag = $got"
+            else
+              echo "::error::$flag = '$got', se esperaba '$want'"
+              exit 1
+            fi
+          }
+          # Silencio en runtime: revertir cualquiera de estos dos reactiva el
+          # logging periodico o devuelve la superficie de depuracion.
+          expect CONFIG_RTW_DEBUG       n
+          expect CONFIG_PROC_DEBUG      n
+          # TX power: limite contra el regdomain y escalado por tasa.
+          expect CONFIG_TXPWR_LIMIT     y
+          expect CONFIG_TXPWR_LIMIT_EN  y
+          expect CONFIG_TXPWR_BY_RATE_EN y
+          # Entrega de tramas coalescente.
+          expect CONFIG_RTW_GRO         y
+          # DBG se mantiene a 1 a proposito: phydm_debug.c esta dentro de
+          # #if DBG y ponerlo a 0 vaciaria el objeto (design.md D1/D2).
+          if grep -qE '^#define[[:space:]]+DBG[[:space:]]+0' driver/include/autoconf.h; then
+            echo "::error::DBG 0 vaciaria phydm_debug.c — debe quedarse en 1"
+            exit 1
+          fi
+          echo "OK: DBG sigue a 1"
+          # CONFIG_PSD_TOOL debe seguir a y: su macro vive en
+          # phydm_features_iot.h y apagarlo rompe el enlazado.
+          expect CONFIG_PSD_TOOL        y
+
+      - name: "Anti-sustitucion: el default de rtw_usb_rxagg_mode sobrevive a la HAL"
+        # design.md D5. usb_halinit.c:115-116 sustituye por RX_AGG_DMA todo
+        # valor que no sea RX_AGG_DMA ni RX_AGG_USB. Si el default del modulo
+        # no es uno de esos valores, el driver aplica OTRO modo del que el
+        # parametro dice, y eso no puede pasar sin que el CI lo note.
+        run: |
+          set -e
+          default=$(sed -n 's/^int rtw_usb_rxagg_mode = \([0-9]*\);.*/\1/p' \
+                    driver/os_dep/linux/os_intfs.c | head -1)
+          if [ -z "$default" ]; then
+            echo "::error::no se pudo leer el default de rtw_usb_rxagg_mode"
+            exit 1
+          fi
+          echo "default de rtw_usb_rxagg_mode = $default"
+          # RX_AGG_DMA=1 y RX_AGG_USB=2 segun el enum de hal_data.h.
+          if [ "$default" != "1" ] && [ "$default" != "2" ]; then
+            echo "::error::el default ($default) es un valor que usb_halinit.c:115-116"
+            echo "::error::sustituye por RX_AGG_DMA. El parametro no seria honrado."
+            exit 1
+          fi
+          echo "OK: el default es un valor que el driver honra sin sustituirlo"
+          # El enum del fuente y el valor por defecto no pueden divergir.
+          dma=$(sed -n 's/^[[:space:]]*RX_AGG_DISABLE,.*/0/p;/^[[:space:]]*RX_AGG_DMA,.*/1/p' \
+                driver/include/hal_data.h | head -1)
+          if [ "$dma" != "1" ]; then
+            echo "::error::no se pudo confirmar RX_AGG_DMA=1 en hal_data.h"
+            exit 1
+          fi
+          echo "OK: RX_AGG_DMA=1 confirmado en hal_data.h"
+
+      - name: "Invariantes: nada fija el dominio regulatorio"
+        # La region la impone la red a la que se asocia (country IE del AP).
+        # El proyecto no debe alterar el dominio regulatorio ni forzar pais.
+        run: |
+          set -e
+          hits=$(grep -rnE "iw[[:space:]]+reg[[:space:]]+set" \
+                 --include='*.sh' --include='*.service' --include='*.md' \
+                 . 2>/dev/null | grep -v "^\./docs/" || true)
+          if [ -n "$hits" ]; then
+            echo "::error::el repo contiene una orden de 'iw reg set':"
+            echo "$hits"
+            exit 1
+          fi
+          echo "OK: ninguna orden de 'iw reg set' en el repo"
+          # rtw_country_code no debe forzarse en la configuracion de modprobe.
+          if grep -rn "rtw_country_code" /etc/modprobe.d/ 2>/dev/null; then
+            echo "::error::rtw_country_code esta forzado en /etc/modprobe.d"
+            exit 1
+          fi
+          echo "OK: rtw_country_code no esta forzado en modprobe.d"
+
+      - name: "Invariantes: el reload no activa depuracion en runtime"
+        # Los procedimientos de recarga no deben dejar componentes de debug
+        # activos. Con PROC_DEBUG=n la escritura no tendria destino, pero el
+        # intento tambien es un error: significa que alguien espera que exista.
+        run: |
+          set -e
+          if grep -n "rtl8192eu.*odm/cmd\|dbg 13 1" scripts/reload-wn8200nd-1ant; then
+            echo "::error::el script de recarga sigue escribiendo en el procfs de debug"
+            exit 1
+          fi
+          echo "OK: el script de recarga no toca el procfs de debug"
+          bash -n scripts/reload-wn8200nd-1ant
+          echo "OK: bash -n pasa"
+
+      - name: "Invariantes: no queda monitorizacionPasiva en el arbol"
+        run: |
+          set -e
+          if [ -d monitoring ]; then
+            echo "::error::el directorio monitoring/ todavia existe:"
+            ls -la monitoring
+            exit 1
+          fi
+          echo "OK: no hay directorio monitoring/"
+          # Ningun script del repo debe recolectar telemetria del driver.
+          hits=$(grep -rln "rx_drop_monitor\|dig_fa_monitor\|odm/cmd" --include='*.sh' . || true)
+          if [ -n "$hits" ]; then
+            echo "::error::scripts que recolectan telemetria del driver:"; echo "$hits"; exit 1
+          fi
+          echo "OK: ningun script recolecta telemetria del driver"
+
+  # ---------------------------------------------------------------------------
   # 3. El toggle de Bluetooth debe seguir compilando (por si algún día se activa).
   # ---------------------------------------------------------------------------
   bt-toggle:
@@ -226,3 +452,234 @@ jobs:
           strings driver/8192eu.ko | grep -q "halbtc" \
             && echo "OK: código BT coex enlazado" \
             || echo "::warning::BT compiló pero no se detectan símbolos halbtc"
+
+  # ---------------------------------------------------------------------------
+  # 4. Compilacion contra los headers REALES del despliegue (Debian 6.12).
+  #
+  # Los jobs `build` de arriba compilan contra los headers de Ubuntu del runner.
+  # Eso prueba compatibilidad hacia delante, NO que el driver compile en la
+  # maquina de despliegue (Debian trixie, kernel 6.12.x). Un vermagic o un
+  # __attribute__ disponible solo en una de las dos familias pasaria el CI y
+  # romperia aqui. Este contenedor es el test que corresponde.
+  # ---------------------------------------------------------------------------
+  build-debian:
+    name: Build (Debian 6.12 headers)
+    needs: sanity
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar toolchain + headers de Debian
+        run: |
+          set -e
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends \
+            build-essential bc kmod rsync linux-headers-6.12-amd64
+          # El paquete puede llamarse linux-headers-6.12-amd64 sin existir en
+          # este momento del ciclo de trixie; se acepta el sufijo generico.
+          if [ ! -d /lib/modules/6.12.*/build ]; then
+            apt-get install -y -qq --no-install-recommends "linux-headers-6.12*"
+          fi
+
+      - name: Detectar KVER de los headers 6.12
+        id: kver
+        run: |
+          set -e
+          kver=""
+          for d in $(ls -1 /lib/modules | grep '^6\.12\.' | sort -V -r); do
+            if [ -f "/lib/modules/$d/build/Makefile" ]; then kver="$d"; break; fi
+          done
+          if [ -z "$kver" ]; then
+            echo "::error::no hay arbol de headers 6.12 en el contenedor"
+            ls -la /lib/modules || true
+            exit 1
+          fi
+          echo "kver=$kver" >> "$GITHUB_OUTPUT"
+          echo "Compilando contra $kver"
+
+      - name: Compilar
+        run: |
+          make clean
+          make -j"$(nproc)" all \
+            KVER="${{ steps.kver.outputs.kver }}" \
+            KSRC="/lib/modules/${{ steps.kver.outputs.kver }}/build"
+
+      - name: El modulo existe y es valido
+        run: |
+          test -f driver/8192eu.ko || { echo "::error::driver/8192eu.ko no se genero"; exit 1; }
+          modinfo driver/8192eu.ko
+
+      - name: USB ID del adaptador presente
+        run: |
+          modinfo driver/8192eu.ko | grep -qi "2357p0126" \
+            && echo "OK: alias USB 2357:0126" \
+            || { echo "::error::falta el alias USB 2357:0126"; exit 1; }
+
+      - name: Configuracion distribuida = la esperada
+        # Las mismas comprobaciones que hace `config-assertions`, pero sobre el
+        # .ko compilado aqui: asi se verifica el efecto real de los flags, no
+        # solo el texto del Makefile.
+        run: |
+          set -e
+          # phydm_psd.o debe seguir compilando (dualidad de CONFIG_PSD_TOOL):
+          # su macro vive en phydm_features_iot.h y apagarlo rompe el enlazado.
+          test -f driver/hal/phydm/phydm_psd.o \
+            || { echo "::error::phydm_psd.o NO se compilo — CONFIG_PSD_TOOL se apago por error"; exit 1; }
+          echo "OK: phydm_psd.o se compila"
+          # Y el enlace debe encontrarlo: si el .o existe pero el símbolo no,
+          # el problema es el lado del header, no del Makefile.
+          nm -o driver/8192eu.ko | grep -q "phydm_psd_init" \
+            || { echo "::error::phydm_psd.o se compila pero phydm_psd_init no esta enlazado"; exit 1; }
+          echo "OK: phydm_psd_init enlazado"
+          # rtw_proc.o NO debe compilarse: con CONFIG_PROC_DEBUG=n el fichero
+          # entero queda dentro del #ifdef y solo produciria un objeto vacio de
+          # 6000 lineas de fuente.
+          if [ -f driver/os_dep/linux/rtw_proc.o ]; then
+            echo "::error::rtw_proc.o se compilo con CONFIG_PROC_DEBUG=n"
+            exit 1
+          fi
+          echo "OK: rtw_proc.o fuera del build"
+          # El .ko no debe llevar cadenas del arbol procfs.
+          if strings driver/8192eu.ko | grep -q "rtl8192eu/"; then
+            echo "::error::el .ko contiene rutas procfs con CONFIG_PROC_DEBUG=n"
+            exit 1
+          fi
+          echo "OK: sin rutas procfs en el .ko"
+          # El parametro de nivel de log no debe existir (CONFIG_RTW_DEBUG=n).
+          if modinfo -p driver/8192eu.ko | grep -q "^rtw_drv_log_level"; then
+            echo "::error::rtw_drv_log_level sigue expuesto con CONFIG_RTW_DEBUG=n"
+            exit 1
+          fi
+          echo "OK: rtw_drv_log_level no es parametro del modulo"
+          # Fixes de estabilidad USB presentes. `nm -o` (con -o) es lo que hace
+          # el job `build`: sobre un .ko, nm sin -o no siempre reconoce el
+          # formato y no imprime la tabla de simbolos.
+          for s in rtw_usb_ep_reset_work_deinit rtw_usb_ep_reset_work_init; do
+            nm -o driver/8192eu.ko | grep -q "$s" \
+              || { echo "::error::falta el fix de URB stall: $s"; exit 1; }
+          done
+          echo "OK: fixes de URB stall presentes"
+          # El fix de use-after-free A1 tiene que LLAMARSE, no solo existir.
+          grep -q "rtw_usb_ep_reset_work_deinit();" driver/os_dep/linux/usb_intf.c \
+            || { echo "::error::rtw_usb_ep_reset_work_deinit no se llama en el path de disconnect"; exit 1; }
+          echo "OK: se llama desde rtw_dev_remove()"
+
+      - name: Subir artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: rtl8192eu-debian-${{ steps.kver.outputs.kver }}-${{ github.sha }}
+          path: driver/8192eu.ko
+          if-no-files-found: warn
+          retention-days: 7
+
+      - name: Nada quedo sin limpiar
+        run: |
+          make clean
+          left=$(find driver -name '*.o' -o -name '*.ko' -o -name '.*.cmd' | head -20)
+          if [ -n "$left" ]; then
+            echo "::error::make clean dejo objetos atras:"; echo "$left"; exit 1
+          fi
+          echo "OK: make clean limpia todo el arbol"
+
+  # ---------------------------------------------------------------------------
+  # 7. Banco de pruebas: carga y descarga REALES del modulo.
+  #
+  # Un contenedor NO puede hacer esto: comparte el kernel del host, asi que
+  # `insmod` desde un contenedor carga el modulo en la maquina. Verificado el
+  # 2026-09-28: un .ko de prueba cargado con `docker run --privileged` aparece en
+  # el /proc/modules del host. Por eso este banco es una VM con kernel propio, no
+  # un contenedor. Ver design.md Restriccion 5 y D9.
+  #
+  # Lo que comprueba y por que importa: el fix A1 de docs/AUDIT.md (el work de
+  # URB stall que despierta sobre un adapter liberado) SOLO se manifiesta en la
+  # descarga del modulo, no en la carga. Un job que solo comprobara que el .ko
+  # compila pasaria por encima de ese fallo sin verlo.
+  # ---------------------------------------------------------------------------
+  vm-load-test:
+    name: "VM: carga y descarga del modulo"
+    needs: sanity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: "Toolchain: QEMU, busybox y headers del kernel del despliegue"
+        run: |
+          set -e
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            qemu-system-x86 cpio gzip busybox-static kmod bc
+          qemu-system-x86_64 --version | head -1
+          # El kernel del despliegue (Debian 6.12). Se compila el .ko contra el
+          # MISMO kernel que corre dentro de la VM: compilar contra un kernel y
+          # cargar en otro solo valdría si coincidence, no por diseño.
+          sudo apt-get install -y -qq --no-install-recommends \
+            linux-headers-6.12-amd64 kmod
+          kver=""
+          for d in $(ls -1 /lib/modules | grep '^6\.12\.' | sort -V -r); do
+            if [ -f "/lib/modules/$d/build/Makefile" ]; then kver="$d"; break; fi
+          done
+          test -n "$kver" || { echo "::error::sin headers 6.12"; exit 1; }
+          echo "KVER=$kver" >> "$GITHUB_ENV"
+          echo "compilando y probando contra $kver"
+
+      - name: "Compilar el .ko contra ese kernel"
+        run: |
+          set -e
+          make clean
+          make -j"$(nproc)" all \
+            KVER="${KVER}" KSRC="/lib/modules/${KVER}/build"
+          test -f driver/8192eu.ko
+
+      - name: "Bajar el paquete del kernel para la VM"
+        # El initramfs necesita el vmlinuz y los modulos. Se baja el .deb del
+        # repositorio de Debian en vez de usar el kernel del runner (Ubuntu): la
+        # VM tiene que correr el kernel del despliegue.
+        run: |
+          set -e
+          cd "$RUNNER_TEMP"
+          base="http://deb.debian.org/debian"
+          # amd64, trixie. Se pide el indice para resolver la version exacta.
+          curl -sSf "$base/dists/trixie/main/binary-amd64/Packages.gz" \
+            | gzip -d \
+            | awk -v RS='' '/^Package: linux-image-[0-9]/{print}' \
+            | grep -A20 "^Package: linux-image-6.12" \
+            | grep -m1 '^Filename:' \
+            | awk '{print $2}' > pkgpath
+          test -s pkgpath || { echo "::error::no se encontro linux-image-6.12"; exit 1; }
+          url="$base/$(cat pkgpath)"
+          echo "bajando $url"
+          curl -sSfL -o kernel.deb "$url"
+          ls -la kernel.deb
+
+      - name: "Construir la imagen de la VM"
+        run: |
+          set -e
+          ci/vm/build-image.sh \
+            "$RUNNER_TEMP/kernel.deb" \
+            driver/8192eu.ko \
+            "$RUNNER_TEMP/initrd.img"
+          ls -la "$RUNNER_TEMP"/initrd.img*
+
+      - name: "Arrancar la VM y ejecutar el ciclo insmod/rmmod"
+        run: |
+          set -e
+          OUTDIR="$RUNNER_TEMP/vmout" ci/vm/run.sh \
+            "$RUNNER_TEMP/initrd.img" \
+            "$RUNNER_TEMP/initrd.img.kernel" \
+            900
+          # Volca el log del nucleo de la VM al log del job: sin esto, un fallo
+          # de carga se pierde con la VM apagada.
+          echo "=== dmesg de la VM ==="
+          cat "$RUNNER_TEMP/vmout/console.log" || true
+
+      - name: "Subir el log de la VM"
+        # Sin este artefacto, reproducir un fallo de carga obliga a arrancar la
+        # VM de nuevo (minutos, con emulacion de software).
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm-load-test-${{ github.sha }}
+          path: ${{ runner.temp }}/vmout/
+          if-no-files-found: warn
+          retention-days: 7

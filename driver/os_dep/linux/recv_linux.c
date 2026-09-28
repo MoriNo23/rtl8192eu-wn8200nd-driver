@@ -368,6 +368,24 @@ static int napi_recv(_adapter *padapter, int budget)
 		if (rtw_netif_receive_skb(padapter->pnetdev, pskb) == NET_RX_SUCCESS)
 			rx_ok = _TRUE;
 
+		/*
+		 * [RESTAURADO 2026-09-28] Etiqueta obligatoria con CONFIG_RTW_GRO=y.
+		 *
+		 * El commit 5507d47 ("fix: resolve empty-body and unused label
+		 * warnings") borro esta etiqueta para callar -Wunused-label. El aviso
+		 * solo aparecia porque CONFIG_RTW_GRO estaba a 'n': el `goto next` de
+		 * arriba esta dentro de #ifdef CONFIG_RTW_GRO, asi que con GRO apagado
+		 * la etiqueta no la referencia nadie y el compilador se queja. Borrarla
+		 * era correcto ENTONCES, pero rompe el enlazado en cuanto se activa
+		 * GRO: el `goto` vuelve a compilarse y se queda sin destino.
+		 *
+		 * Se restaura tal cual estava en el upstream (clnhub/rtl8192eu-linux,
+		 * rama 5.11.2.3). No es una etiqueta decorativa: el `goto next` salta
+		 * por encima de rtw_netif_receive_skb para no entregar dos veces el
+		 * mismo skb cuando GRO ya lo consumio, y cae aqui para contabilizarlo
+		 * en work_done igual que la entrega normal.
+		 */
+next:
 		if (rx_ok == _TRUE) {
 			work_done++;
 			DBG_COUNTER(padapter->rx_logs.os_netif_ok);

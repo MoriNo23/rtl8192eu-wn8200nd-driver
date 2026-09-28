@@ -12478,9 +12478,19 @@ void linked_status_chk(_adapter *padapter, u8 from_timer)
 	 * [PATCH optimization-wn8200nd] Watchdog WIFI_UNDER_SURVEY atascado
 	 *
 	 * Problema: Al cambiar de canal el router, el driver entra en WIFI_UNDER_SURVEY
-	 * para re-escanear. Si el Beacon del nuevo canal no llega a tiempo (posible
-	 * con rtw_usb_rxagg_mode=0 donde no hay buffering), la máquina de estados
-	 * nunca sale del survey y el adaptador queda congelado de forma silenciosa.
+	 * para re-escanear. Si el Beacon del nuevo canal no llega a tiempo, la
+	 * máquina de estados nunca sale del survey y el adaptador queda congelado de
+	 * forma silenciosa.
+	 *
+	 * CORRECCION 2026-09-28: la premisa original de este parche era "posible con
+	 * rtw_usb_rxagg_mode=0 donde no hay buffering". Es falsa: ese parámetro no
+	 * desactiva la agregación. usb_halinit.c:115-116 sustituye todo valor que no
+	 * sea RX_AGG_DMA (1) ni RX_AGG_USB (2) por RX_AGG_DMA, y acto seguido fija
+	 * rxagg_dma_size=8 / rxagg_dma_timeout=8, de modo que 0 y 1 dan un estado
+	 * idéntico. La causa real del atasco no está identificada con precisión: aquí
+	 * se describe el síntoma (el beacon no llega a tiempo) sin atribuirle un
+	 * mecanismo de buffering que no existe. Ver también el comentario de
+	 * MAX_CONTINUAL_IO_ERR en rtw_io.h, que tenía la misma premisa falsa.
 	 *
 	 * Solución: Si el scan lleva más de RTW_SURVEY_STUCK_MS ms sin completarse
 	 * (medido con jiffies), se activa scan_abort para que survey_timer_hdl

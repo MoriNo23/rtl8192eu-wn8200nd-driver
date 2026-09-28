@@ -266,16 +266,29 @@ struct reg_protocol_wt {
 /*
  * [PATCH optimization-wn8200nd] MAX_CONTINUAL_IO_ERR = 80
  *
- * Motivo: Con rtw_usb_rxagg_mode=0 y rtw_en_napi=0, cada paquete individual
- * genera un error USB separado durante el silencio de radio provocado por un
- * cambio de canal del router (típicamente 200-500ms en 2.4GHz).
- * Con el valor anterior (30), el driver alcanzaba surprise_removed en ~300ms,
- * matando la interfaz por un evento normal de red.
+ * ORIGEN DEL UMBRAL (sin cambios de comportamiento; solo se corrige la premisa).
  *
- * Con 80: da ~800ms de tolerancia antes de declarar el dispositivo muerto,
- * cubriendo la peor ventana de channel switching observada.
- * Una desconexión USB física real genera errores mucho más rápido (< 50ms),
- * por lo que la detección de fallo genuino no se ve afectada.
+ * El umbral se eligió por la VENTANA DE TIEMPO del cambio de canal del router,
+ * no por una teoría de buffering. Durante el silencio de radio que provoca un
+ * channel switch (200-500 ms en 2.4 GHz) el host no recibe beacons y cada URB
+ * de RX que se re-encola falla. Con el valor anterior (30) el driver alcanzaba
+ * surprise_removed en ~300 ms, matando la interfaz por un evento normal de red.
+ * Con 80 hay ~800 ms de tolerancia, que cubre la peor ventana observada. Una
+ * desconexión USB física real falla mucho más rápido (< 50 ms), así que la
+ * detección de fallo genuino no se ve afectada.
+ *
+ * CORRECCION 2026-09-28: la justificación original de este parche decía
+ * "Con rtw_usb_rxagg_mode=0 ... no hay buffering". Eso es FALSO, y se retira
+ * por ser documentacion activamente falsa. El parametro no puede desactivar la
+ * agregacion: usb_halinit.c:115-116 sustituye cualquier valor que no sea
+ * RX_AGG_DMA (1) ni RX_AGG_USB (2) por RX_AGG_DMA, y a continuacion (linea
+ * 123) fija rxagg_dma_size=8 / rxagg_dma_timeout=8. Por tanto 0 y 1 producen
+ * un estado IDENTICO: agregacion DMA con umbral definido por el driver.
+ * Un valor 0 (o 3, o negativo) es descartado en silencio, no respetado.
+ *
+ * El valor 80 SE CONSERVA a proposito: prevenir un surprise_removed masivo no
+ * hace daño, y revertirlo seria un cambio de comportamiento sin evidencia que
+ * lo respalde. Lo unico que no se sostiene es la premisa, y ya no aparece.
  */
 #define MAX_CONTINUAL_IO_ERR 80
 

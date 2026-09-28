@@ -28,7 +28,7 @@ Bus 001 Device 018: ID 2357:0126 TP-Link 802.11n NIC
 | Physical defect | antenna B connector desoldered → driver forced to 1T1R |
 | Host | ~2009 netbook, Intel Sandy Bridge, limited RAM |
 | Target kernel | Debian 6.12.x |
-| DKMS package | `rtl8192eu/1.7.0` |
+| DKMS package | `rtl8192eu/1.8.0` |
 
 The matching entry in the driver's USB ID table is
 `driver/os_dep/linux/usb_intf.c:212`:
@@ -62,8 +62,30 @@ If you clone this repo, **your adapter may be fine** — read the tuning guide t
 |---|---|---|
 | `rtw_trx_path_bmp=0x11` (1T1R) | only antenna A | antenna B connector desoldered (physically dead) |
 | `rtw_rxgain_offset_2g=0` | no LNA attenuation | antenna A signal weak (-73 dBm); attenuation made it worse |
-| `rtw_bw_mode=0x21` | HT40 enabled (2.4 GHz) | re-enabled 2026-08-22; matches the source default |
+| `rtw_bw_mode=0x21` | HT40 configured (2.4 GHz) | matches the source default — but **configured is not negotiated**: 40 MHz only happens if the AP announces it *and* sits on a valid HT40 primary channel |
+| `rtw_usb_rxagg_mode=1` | RX aggregation in DMA mode with a driver-defined threshold | the previous default `0` never disabled anything (see below) |
+| `CONFIG_RTW_GRO=y`, `rtw_en_napi=1` | coalesced frame delivery | largest CPU and throughput win; the reason they were off was based on a false premise |
+| `CONFIG_RTW_DEBUG=n`, `CONFIG_PROC_DEBUG=n` | **no runtime logging, no procfs** | 2 908 of 3 929 kernel lines were the driver's own. Debug output is compiled in but **unreachable**: no procfs, no module parameter, no ioctl |
+| `CONFIG_TXPWR_LIMIT_EN=y` | driver computes the regulatory power limit | previously emitted `lmt`/`ulmt = NA` |
 | `-O2` build | standard optimization | smaller code, better cache on an old CPU |
+
+### Two defaults that never did what their names said
+
+**`rtw_usb_rxagg_mode=0` did not disable aggregation.** `usb_halinit.c:115-116`
+replaces any value that is neither `RX_AGG_DMA` (1) nor `RX_AGG_USB` (2) with
+`RX_AGG_DMA`, and then (lines 123-125) assigns the driver threshold. So `0` and `1`
+produced a **bit-identical** state, and the disable mode is unreachable through
+this parameter. The default is now `1` — same behaviour, honest value. Two
+stability patches were justified in comments by "with `rtw_usb_rxagg_mode=0` there
+is no buffering"; that premise was false, and the comments have been corrected. The
+thresholds themselves are kept (see `AGENTS.md`).
+
+**`rtw_bw_mode=0x21` configures HT40 but does not get you HT40.** Bandwidth is
+negotiated, not commanded: the link stays at 20 MHz unless the AP announces 40 MHz
+*and* is on a valid HT40 primary channel. On this deployment the AP is on **channel
+3**, which is not a valid 40 MHz primary in 2.4 GHz, so the link is 20 MHz no matter
+what this parameter says. Check the real width with `iw dev wn8200nd info`, not with
+the modprobe file.
 
 ### Full-capability tuning (healthy 2-antenna adapter)
 
@@ -75,8 +97,13 @@ options 8192eu rtw_trx_path_bmp=0x33 rtw_bw_mode=0x21 rtw_rxgain_offset_2g=4
 ```
 
 Or edit the source directly:
-- `driver/os_dep/linux/os_intfs.c:333` — `rtw_trx_path_bmp = 0x11` → `0x33`
+- `driver/os_dep/linux/os_intfs.c` — `rtw_trx_path_bmp = 0x11` → `0x33`
 - `driver/Makefile` — `ccflags-y += -O2` → `-O3` (optional)
+
+With a healthy adapter you may also want to re-enable 2x2 antenna diversity and
+`rtw_antdiv_cfg=0` (currently forced to 1), and check `rtw_hiq_filter`: it is a
+sensitivity trade-off, documented with its alternatives in
+[`docs/RF-SENSITIVITY.md`](docs/RF-SENSITIVITY.md).
 
 Then reinstall (see below).
 
@@ -90,7 +117,7 @@ Then reinstall (see below).
 |---|---|---|---|
 | STA (Wi-Fi client) | yes | ✅ enabled | — |
 | WPA2/WPA3 | yes | ✅ enabled | — |
-| 2.4 GHz HT20/HT40 | yes | ✅ HT40 (`0x21`) | `rtw_bw_mode=0x20` forces HT20 |
+| 2.4 GHz HT20/HT40 | yes | HT40 configured (`0x21`); actual width is **20 MHz** on a channel 3 AP | `rtw_bw_mode=0x20` forces HT20 |
 | 2x2 MIMO | yes | 1T1R (antenna A) | `rtw_trx_path_bmp=0x33` |
 | Monitor mode | yes | ✅ enabled since 1.7.0 | — |
 | Packet injection (monitor) | yes | ⚠️ radiotap fix in 1.7.0, on-air test pending | test: `aireplay-ng -9 <mon>` |
@@ -115,7 +142,12 @@ sudo ip link set wn8200nd up
 sudo aireplay-ng -9 wn8200nd
 ```
 
-The driver also exposes `/proc/net/rtl8192eu/<iface>/` debug interface even in client mode (RSSI, RX stats, adaptivity write) because `CONFIG_PROC_DEBUG=y` is on.
+Since 1.8.0 the driver exposes **no** `/proc/net/rtl8192eu/` tree: `CONFIG_PROC_DEBUG=n`.
+That also removes the only way to turn on the PHY debug bitmask at runtime, so
+there is no runtime debug surface at all — no procfs, no module parameter, no ioctl.
+For live signal and rate use `wn8200nd-antenna --once` or `iw dev wn8200nd station dump`.
+See [`docs/USB-LINK-HANG.md`](docs/USB-LINK-HANG.md) for diagnosing a dead link
+without driver logging.
 
 ---
 
@@ -131,6 +163,17 @@ make -C driver clean && make -j"$(nproc)" -C driver all   # compilar
 sudo ./install_manual.sh                                  # instalar/actualizar (único script)
 ```
 
+### Verification lives in CI, not on your machine
+
+Do **not** compile or run static analysis locally to check a change — push and let
+GitHub Actions decide. The workflow compiles against two kernel families (the
+runner's Ubuntu headers for forward compatibility, and Debian 6.12 headers in a
+container, which is the actual deployment target) and runs sparse, smatch and
+checkpatch against a versioned baseline.
+
+`make` above is for **deploying**, not for verifying: it is the step that installs
+the module. Verification is the CI run, and it should be green before you install.
+
 `install_manual.sh` (v4) hace todo:
 1. Sincroniza el source parcheado a `/usr/src/rtl8192eu-<VER>` + `dkms add` si falta
 2. `dkms build` + `dkms install --force` (el `.ko.xz` de `updates/dkms/` tiene prioridad) + `depmod`
@@ -142,7 +185,7 @@ sudo ./install_manual.sh                                  # instalar/actualizar 
 Si prefieres hacerlo paso a paso — por ejemplo tras un `git pull`:
 
 ```bash
-VER=$(sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p' dkms.conf)   # ej: 1.7.0
+VER=$(sed -n 's/^PACKAGE_VERSION="\(.*\)"/\1/p' dkms.conf)   # ej: 1.8.0
 
 # 1. Source parcheado a /usr/src (siempre fresco, nunca una copia olvidada)
 sudo mkdir -p /usr/src/rtl8192eu-$VER
@@ -186,15 +229,19 @@ cat /sys/module/8192eu/version
 
 | Param | Default | Why |
 |---|---|---|
-| `rtw_en_napi` | 0 | NAPI off (USB stability) |
-| `rtw_usb_rxagg_mode` | 0 | USB RX aggregation off (low latency) |
-| `rtw_dynamic_agg_enable` | 0 | dynamic aggregation off |
+| `rtw_en_napi` | 0 | NAPI off **in the source**; the deployment turns it on via `8192eu.conf` |
+| `rtw_en_gro` | 1 | coalesced frame delivery (1.8.0; was 0). Only effective with NAPI: the driver zeroes `en_gro` when `en_napi==0` |
+| `rtw_usb_rxagg_mode` | 1 | RX_AGG_DMA with a driver-defined threshold (1.8.0; was 0). Any value other than 1 or 2 is silently replaced by DMA, and the disable mode is unreachable |
+| `rtw_dynamic_agg_enable` | 0 | dynamic **TX** aggregation off |
 | `rtw_enusbss` | 0 | USB autosuspend off |
-| `MAX_CONTINUAL_IO_ERR` | 80 | tolerate USB error bursts (10→30→80) |
+| `MAX_CONTINUAL_IO_ERR` | 80 | tolerate the radio silence of a channel switch (10→30→80). Chosen by the *time window*, not by any buffering theory |
+| `MAX_USB_STALL_ERR` | 200 | own counter for `-EPIPE`/`-EPROTO`, so a permanently halted endpoint eventually escalates |
 | `CONFIG_IPS_MODE` / `CONFIG_LPS_MODE` | 0 | no power saving |
 | `CONFIG_TRAFFIC_PROTECT` | y | prioritizes ICMP/ARP (gaming) |
 | `CONFIG_ICMP_VOQ` | y | ICMP priority for gaming |
 | `rtw_antdiv_cfg` | 1 | antenna diversity (no effect on 8192E: HW always off) |
+| `rtw_bw_mode` | 0x21 | HT40 *configured* in 2.4 GHz; the negotiated width depends on the AP's channel and announcement |
+| `DBG` (autoconf.h) | 1 | kept on purpose: `phydm_debug.c` is entirely inside `#if DBG`, and `DBG 0` would empty the object and break linking |
 
 ### Runtime EDCCA / RF params (`/etc/modprobe.d/8192eu.conf`)
 
@@ -205,21 +252,34 @@ cat /sys/module/8192eu/version
 | `rtw_rxgain_offset_2g` | 0 | LNA attenuation (0 = more) |
 | `rtw_notch_filter` | 1 | notch filter on |
 | `rtw_smart_ps` | 0 | power saving for realtek (no) |
-| `rtw_bw_mode` | **0x21** | HT40 in 2.4 GHz (0x20 = HT20 only) |
+| `rtw_bw_mode` | **0x21** | HT40 configured in 2.4 GHz (0x20 = HT20 only). Check the real width with `iw dev wn8200nd info` |
+| `rtw_usb_rxagg_mode` | 1 | RX aggregation, DMA mode with driver threshold |
+| `rtw_en_napi` | 1 | coalesced frame delivery |
+| `rtw_en_gro` | (default 1) | GRO on; only effective when NAPI is on |
 
-Note: writing to `/sys/module/8192eu/parameters/*` does **not** propagate to runtime
-registry. Use `/proc/net/rtl8192eu/<iface>/odm/cmd` for live EDCCA tuning instead.
+Note: writing to `/sys/module/8192eu/parameters/*` does **not** propagate to the
+runtime registry — the `module_param` is copied into `registry_priv` only at module
+init. Edit `/etc/modprobe.d/8192eu.conf` and reload the module instead.
 
 ---
 
-## Debug
+## Debugging
 
-```bash
-echo "dbg 13 1" | sudo tee /proc/net/rtl8192eu/wn8200nd/odm/cmd   # EDCCA logs
-sudo dmesg -w | grep -E 'ADPTVTY|th_l2h.*dBm'
-```
+There is **no runtime debug surface** since 1.8.0. `CONFIG_RTW_DEBUG=n` means no
+driver log lines, and `CONFIG_PROC_DEBUG=n` means no `/proc/net/rtl8192eu/` — which
+was the only writer of the PHY debug bitmask. The debug code is still compiled in
+(it must be, see `DBG` above) but there is no way to reach it: no procfs, no module
+parameter, no ioctl, no vendor command.
 
-`dbg 10` – show active debug components. `dbg 101` – disable all.
+What to use instead:
+
+| Question | Answer |
+|---|---|
+| Is the link dead because of USB hardware or the driver? | [`docs/USB-LINK-HANG.md`](docs/USB-LINK-HANG.md) |
+| Does the driver even build and link? | the CI assertions (`build`, `build-debian`, `config-assertions`) |
+| Did the module load? | `lsmod \| grep 8192eu`, `dmesg \| grep -i 8192eu` (core messages, not driver ones) |
+| Signal, rate, negotiated width | `wn8200nd-antenna --once`, `iw dev wn8200nd info` |
+| Which parameters affect RX sensitivity? | [`docs/RF-SENSITIVITY.md`](docs/RF-SENSIVITY.md) |
 
 ---
 

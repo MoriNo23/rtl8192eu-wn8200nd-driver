@@ -2,8 +2,40 @@
 # reload-wn8200nd-1ant.sh — recarga el módulo 8192eu en modo 1T1R (solo antena A)
 # Uso: cuando el adaptador esté conectado:  reload-wn8200nd-1ant
 # Recarga con params de /etc/modprobe.d/8192eu.conf (rtw_trx_path_bmp=0x11),
-# verifica el resultado y reactiva el debug EDCCA.
+# verifica el resultado. No activa ningun componente de depuracion.
 set -e
+
+# ------------------------------------------------------------------ seguridad
+# [FIX 2026-09-28] Este script DESCARGA y RECARGA el módulo, o sea que en el
+# punto medio la interfaz no existe. Con `set -e` y sin más, un fallo en
+# `modprobe` (o en cualquier paso posterior) abortaba el script dejando
+# `wn8200nd` caída y sin gestionar, que es justo lo que la regla obligatoria de
+# AGENTS.md ("Testing con el adaptador") prohíbe: la restauración tiene que
+# correr IGUAL aunque el test falle a mitad.
+#
+# El trap se instala ANTES de tocar el módulo y se limpia al final del camino
+# feliz, para no tocar de nuevo la interfaz que el propio script acaba de dejar bien.
+RESTAURADO=0
+restaurar() {
+    [ "$RESTAURADO" -eq 1 ] && return 0
+    RESTAURADO=1
+    echo ""
+    echo "!!! Saliendo con error: devolviendo wn8200nd a estado usable !!!"
+    # ';' y no '&&': cada paso corre aunque el anterior falle. Esta es la parte
+    # que la regla de AGENTS.md exige que sea incondicional.
+    sudo ip link set wn8200nd down 2>/dev/null
+    sudo iw dev wn8200nd set type managed 2>/dev/null
+    sudo ip link set wn8200nd up 2>/dev/null
+    sudo systemctl restart NetworkManager 2>/dev/null
+    sleep 3
+    if ip -4 addr show wn8200nd 2>/dev/null | grep -q 'inet '; then
+        echo "OK: wn8200nd restaurada en managed con IP"
+    else
+        echo "ATENCION: wn8200nd sigue sin IP. Reintenta con:"
+        echo "  nmcli device connect wn8200nd"
+    fi
+}
+trap restaurar EXIT
 
 echo "=== 1. Verificar adaptador conectado ==="
 if ! lsusb 2>/dev/null | grep -qiE '0bda:818b|0bda:8179|2357:0126|realtek|tp-link.*nic'; then
@@ -46,8 +78,16 @@ ping -I wn8200nd -c 4 -W 2 192.168.1.1 2>&1 | tail -3
 echo "=== 6. Estado antenas ==="
 wn8200nd-antenna --once || true
 
-echo "=== 7. Reactivar DBG_ADPTVTY (bit 13) ==="
-echo "dbg 13 1" | sudo tee /proc/net/rtl8192eu/wn8200nd/odm/cmd > /dev/null && echo "dbg 13 activo"
+# [2026-09-28] El paso que reactivaba DBG_ADPTVTY (bit 13) se ha eliminado.
+# CONFIG_PROC_DEBUG=n deja el arbol /proc/net/rtl8192eu/ fuera del build, asi que
+# la escritura ya no tendria destino; ademas, con la superficie de depuracion
+# cerrada, un script de recarga no debe dejar ningun componente de debug activo.
+# El intervalo de la red (2,3) se mantiene: son pasos de verificacion, no de debug.
+
+# El camino feliz ya dejo la interfaz bien: se desactiva el trap para no
+# reiniciar NetworkManager otra vez sin motivo.
+RESTAURADO=1
+trap - EXIT
 
 echo "=== LISTO. Si algo falla: revertir a 2x2 con ==="
 echo "  sudo cp /etc/modprobe.d/8192eu.conf.bak-2ant-20260730 /etc/modprobe.d/8192eu.conf && sudo rmmod 8192eu && sudo modprobe 8192eu"

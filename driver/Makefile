@@ -65,18 +65,51 @@ CONFIG_USB_AUTOSUSPEND = n
 CONFIG_HW_PWRP_DETECTION = n
 CONFIG_BT_COEXIST = n
 CONFIG_WAPI_SUPPORT = n
-# [FIX 2026-08-22] El macro CONFIG_PSD_TOOL viene definido desde
-# phydm_features_iot.h (no se puede apagar por aqui), asi que la variable de make
-# debe estar a 'y' o phydm_psd.o no compila y el link falla con simbolos indefinidos.
+# [FIX 2026-08-22] CONFIG_PSD_TOOL — DUALIDAD CONOCIDA, NO LA TOQUES A LA LIGHT.
+#
+# Hay DOS fuentes de verdad para este símbolo y solo se puede apagar en las dos a
+# la vez, en este orden exacto:
+#   1. esta variable de make, que decide si phydm_psd.o entra en la lista de
+#      objetos: driver/hal/phydm/phydm.mk:241
+#         $(MODULE_NAME)-$(CONFIG_PSD_TOOL) += hal/phydm/phydm_psd.o
+#   2. el macro del header, que decide si phydm.c llama a la función:
+#      driver/hal/phydm/phydm_features_iot.h:147  ->  #define CONFIG_PSD_TOOL
+#      (sin valor, asi que no se puede apagar desde aqui; y phydm.c:1779-1781
+#      llama a phydm_psd_init() dentro de #ifdef CONFIG_PSD_TOOL)
+#
+# Poner solo (1) a 'n' deja el macro del header activo: phydm.c sigue llamando a
+# phydm_psd_init() pero phydm_psd.o no se compila -> el enlazado falla con
+# simbolos indefinidos. Ese es el fallo de modpost que hizo falta este FIX.
+#
+# Por eso la variable dice 'y' aunque el modulo no quiera la herramienta
+# de medicion de PSD. Es una variable que "miente" sobre lo que controla, y es
+# deliberado: apagarla bien exige tocar las tres cosas (esta linea, el header y
+# phydm.mk:241) a la vez, y el beneficio son 15 KB de objeto que no emiten nada
+# en runtime. Ver design.md D2.
+#
+# La asercion de CI comprueba que phydm_psd.o SE compila, para que nadie la
+# apague a la ligera y rompa el enlazado.
 CONFIG_PSD_TOOL = y
 CONFIG_EFUSE_CONFIG_FILE = n
 CONFIG_EXT_CLK = n
 CONFIG_TRAFFIC_PROTECT = y
 CONFIG_LOAD_PHY_PARA_FROM_FILE = y
 CONFIG_TXPWR_BY_RATE = y
-CONFIG_TXPWR_BY_RATE_EN = n
-CONFIG_TXPWR_LIMIT = n
-CONFIG_TXPWR_LIMIT_EN = n
+# [1.8.0] ESCALADO DE POTENCIA POR TASA.
+# Con 'n' todas las tasas iban al mismo valor fijo. Con 'y' el driver escala: la
+# tasa mas alta necesita menos potencia que la mas baja. Efecto neto sobre este
+# enlace pequeno (el objetivo del efuse es 13 dBm HT), pero es la combinacion
+# correcta y evita el gasto de PA en MCS alto.
+CONFIG_TXPWR_BY_RATE_EN = y
+# [1.8.0] LIMITES CONTRA EL DOMINIO REGULATORIO.
+# Con 'n', lmt y ulmt salen NA en la tabla de potencias: el driver no calcula
+# ningun limite. Bajo US (2.4G a 30 dBm) NO recorta nada a 13 dBm, asi que no es
+# un arreglo de rendimiento: es una garantia. Sin esto, cualquier anulacion de
+# potencia futura se emitiria sin recortar, y el dominio regulatorio de cfg80211
+# gobierna que canales se pueden usar, NO el indice de potencia que escribe la
+# HAL. Ver design.md D4.
+CONFIG_TXPWR_LIMIT = y
+CONFIG_TXPWR_LIMIT_EN = y
 CONFIG_RTW_CHPLAN = 0x34
 CONFIG_RTW_ADAPTIVITY_EN = enable
 CONFIG_RTW_ADAPTIVITY_MODE = carrier_sense
@@ -89,7 +122,11 @@ CONFIG_WIFI_MONITOR = y
 CONFIG_MCC_MODE = n
 CONFIG_APPEND_VENDOR_IE_ENABLE = n
 CONFIG_RTW_NAPI = y
-CONFIG_RTW_GRO = n
+# [1.8.0] GRO activado: la entrega de tramas coalescente es la mayor ganancia de
+# CPU y de techo de descarga de la lista. La premisa por la que estaba apagado
+# ("la agregacion USB esta desactivada, por eso GRO molesta") era falsa: el
+# parametro rxagg nunca pudo desactivar la agregacion (ver design.md D5).
+CONFIG_RTW_GRO = y
 CONFIG_RTW_NETIF_SG = y
 CONFIG_RTW_IPCAM_APPLICATION = n
 CONFIG_RTW_REPEATER_SON = n
@@ -107,13 +144,38 @@ ccflags-y += -DCONFIG_RTW_ANDROID=$(CONFIG_RTW_ANDROID)
 endif
 
 ########################## Debug ###########################
-CONFIG_RTW_DEBUG = y
+# [1.8.0] LOGGING EN RUNTIME DESACTIVADO.
+#
+# CONFIG_RTW_DEBUG=y emitia 2.908 de 3.929 lineas del kernel en un arranque
+# normal (medido el 2026-09-28). Con 'n', RTW_INFO / RTW_WARN / RTW_DBG se
+# convierten en no-ops (rtw_debug.h:38-53) y el parametro de modulo
+# rtw_drv_log_level desaparece de la superficie.
+#
+# CONSECUENCIA (assumption deliberada): apagar esto hace invisibles los parches
+# propios en runtime, que hasta ahora se diagnosticaban leyendo el log. Es el
+# objetivo declarado del change y lo que pide docs/AUDIT.md. Lo que no se
+# puede depurar en vivo se compensa con docs/USB-LINK-HANG.md (para fallos de
+# enlace) y con las aserciones de CI (para fallos de build/enlazado).
+#
+# NO confunde esto con DBG (autoconf.h:274), que se mantiene a 1: phydm_debug.c
+# esta entero dentro de #if DBG, y poner DBG 0 lo vaciaria. Ver design.md D1.
+CONFIG_RTW_DEBUG = n
 # default log level is _DRV_INFO_ = 4,
 # please refer to "How_to_set_driver_debug_log_level.doc" to set the available level.
 CONFIG_RTW_LOG_LEVEL = 4
 
-# enable /proc/net/rtlxxxx/ debug interfaces
-CONFIG_PROC_DEBUG = y
+# [1.8.0] SUPERFICIE DE DEPURACION EN RUNTIME DESACTIVADA.
+#
+# CONFIG_PROC_DEBUG=y montaba /proc/net/rtl8192eu/. Apagarlo no solo quita
+# ficheros: rtw_odm_proc_write() (rtw_proc.c:5605) es el UNICO escritor de
+# dm->debug_components, asi que sin procfs el bitmask de debug de la capa PHY
+# se queda en 0 para siempre. Los macros PHYDM_DBG siguen compilados (no
+# dependen de CONFIG_RTW_DEBUG) pero no tienen ninguna via para activarse:
+# no hay fichero, ni parametro de modulo, ni ioctl, ni comando de vendor.
+#
+# Efecto secundario aceptado: las herramientas de antena perdian su fuente de
+# datos y se migraron a iw dev <iface> station dump en el mismo change.
+CONFIG_PROC_DEBUG = n
 
 ######################## Wake On Lan ##########################
 CONFIG_WOWLAN = n
@@ -241,8 +303,25 @@ _OS_INTFS_FILES :=	os_dep/osdep_service.o \
 			os_dep/linux/ioctl_cfg80211.o \
 			os_dep/linux/rtw_cfgvendor.o \
 			os_dep/linux/wifi_regd.o \
-			os_dep/linux/rtw_android.o \
-			os_dep/linux/rtw_proc.o
+			os_dep/linux/rtw_android.o
+
+# [1.8.0] rtw_proc.o sale del build con CONFIG_PROC_DEBUG=n.
+#
+# Con 'n' el fichero entero queda dentro de #ifdef CONFIG_PROC_DEBUG
+# (rtw_proc.c:22 es el primero y el #endif final cierra el fichero), asi que
+# compilarlo produce un objeto VACIO de 6.000 lineas de fuente. No es inocuo
+# por dos razones:
+#   1. ocupa tiempo de compilacion y espacio en disco para nada;
+#   2. y, mas importante, deja el .ko con la lista de objetos_gpuesea que
+#      suggests que el procfs forma parte del modulo, cuando no lo esta.
+#
+# Se apaga de forma CONDICIONAL, no incondicional, por el mismo motivo que
+# phydm_psd.o: si el flag volviera a 'y' sin el objeto, el enlace fallaria
+# con simbolos indefinidos. La asercion de CI comprueba ambas caras (que con
+# 'n' el .o no exista, y que phydm_psd.o si exista con 'y').
+ifeq ($(CONFIG_PROC_DEBUG), y)
+_OS_INTFS_FILES += os_dep/linux/rtw_proc.o
+endif
 
 # [FIX 2026-08-22 / AUDIT 4] Excluidos del build desktop:
 #  - os_dep/linux/nlrtw.o: netlink de eventos para el daemon Android de
