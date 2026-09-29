@@ -246,10 +246,28 @@ extract_findings() {
     esac
 }
 
-# Recorta el prefijo del repositorio para que el baseline no dependa de donde
-# este el checkout, quita el "./" de los paths relativos, y deduplica.
+# Descarta los hallazgos cuya ruta NO es de este arbol, y normaliza el resto.
+#
+# sparse y smatch analizan tambien las CABECERAS DEL KERNEL, y de ahi vienen
+# hallazgos como:
+#     /usr/src/linux-headers-6.17.0-1022-azure/include/uapi/linux/if_pppox.h:
+#     warning: array of flexible structures
+# No son codigo nuestro y cambian con la version de headers del runner: el
+# primer run del job genero el baseline contra 6.8 y lo ejecuto contra 6.17, y
+# por eso salian 324 hallazgos "nuevos" sin relacion con el driver. Un hallazgo
+# de una cabecera del kernel no es una regresion de este repositorio.
+#
+# Solo se descartan rutas absolutas fuera del arbol. Las relativas se conservan,
+# porque checkpatch y los demas ya recorren unicamente driver/.
 normalize() {
     sed -e "s|^$REPO_ROOT/||" -e 's|^\./||' \
+    | awk '
+        # cabeceras del kernel y del sistema, en cualquier version
+        /^\/usr\/src\//     { next }
+        /^\/usr\/include\// { next }
+        /^\/lib\/modules\// { next }
+        { print }
+    ' \
     | grep -v '^[[:space:]]*$' \
     | LC_ALL=C sort -u
 }

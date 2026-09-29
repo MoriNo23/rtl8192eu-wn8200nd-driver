@@ -708,29 +708,34 @@ jobs:
           fn=$(python3 ci/vm/pick-kernel.py /tmp/P image | tail -1)
           [ -n "$fn" ] || { echo "::error::pick-kernel no devolvio el paquete del kernel"; exit 1; }
           echo "bajando $base/$fn"
-          curl -sSfL -o "${{ runner.temp }}/kernel.deb" "$base/$fn"
-          ls -la "${{ runner.temp }}/kernel.deb"
+          # A disco, NO a stdout: el kernel son ~110 MB comprimidos, y
+          # redirigirlos a un pipe agota el buffer de curl y falla con
+          # "(23) client returned ERROR on write" a los pocos KiB. Ese error no
+          # dice nada de la causa, que aqui era el propio comando.
+          curl -sSfL --retry 3 -o /tmp/kernel.deb "$base/$fn"
+          ls -la /tmp/kernel.deb
+          # En un contenedor, $RUNNER_TEMP no existe; se compueba que el fichero
+          # ha quedado donde el paso siguiente lo va a buscar.
+          test -s /tmp/kernel.deb || { echo "::error::la descarga del kernel dejo un fichero vacio"; exit 1; }
+          dpkg-deb -I /tmp/kernel.deb | grep -E '^ (Package|Version)'
 
       - name: "Construir la imagen de la VM"
         run: |
           set -e
-          ci/vm/build-image.sh \
-            "$RUNNER_TEMP/kernel.deb" \
-            driver/8192eu.ko \
-            "$RUNNER_TEMP/initrd.img"
-          ls -la "$RUNNER_TEMP"/initrd.img*
+          # $RUNNER_TEMP no existe dentro de un contenedor de job: /tmp si, y
+          # es donde se dejo el .deb en el paso anterior.
+          ci/vm/build-image.sh /tmp/kernel.deb driver/8192eu.ko /tmp/initrd.img
+          ls -la /tmp/initrd.img*
 
       - name: "Arrancar la VM y ejecutar el ciclo insmod/rmmod"
         run: |
           set -e
-          OUTDIR="$RUNNER_TEMP/vmout" ci/vm/run.sh \
-            "$RUNNER_TEMP/initrd.img" \
-            "$RUNNER_TEMP/initrd.img.kernel" \
-            900
+          OUTDIR=/tmp/vmout ci/vm/run.sh \
+            /tmp/initrd.img /tmp/initrd.img.kernel 900
           # Volca el log del nucleo de la VM al log del job: sin esto, un fallo
           # de carga se pierde con la VM apagada.
           echo "=== dmesg de la VM ==="
-          cat "$RUNNER_TEMP/vmout/console.log" || true
+          cat /tmp/vmout/console.log || true
 
       - name: "Subir el log de la VM"
         # Sin este artefacto, reproducir un fallo de carga obliga a arrancar la
@@ -739,6 +744,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vm-load-test-${{ github.sha }}
-          path: ${{ runner.temp }}/vmout/
+          path: /tmp/vmout/
           if-no-files-found: warn
           retention-days: 7
