@@ -322,8 +322,14 @@
   restaurar. (Nota previa incorrecta corregida: se atribuyó el apagado al
   sistema escama tras el panic; fue decisión manual del usuario.)
 
-- [ ] 6.4 Push final y run completo de CI en verde, con los jobs nuevos y los
+- [x] 6.4 Push final y run completo de CI en verde, con los jobs nuevos y los
   preexistentes. Verificación: run completo en verde.
+
+  **Verificado (2026-09-29):** run `36541927909` en verde, 8/8 jobs, tras el push
+  de cierre `8c38efb`: sanity, build ×3 (Ubuntu generic, HWE, Debian 6.12),
+  bt-toggle, static-analysis (sparse+smatch), config-assertions y vm-load-test
+  (carga y descarga reales en VM). Este commit es solo el bookkeeping de esta
+  casilla; su propio run se espera verde por la misma vía.
 
 ## 7. Banco de pruebas: carga y descarga reales del módulo
 
