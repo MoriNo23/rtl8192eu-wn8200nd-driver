@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Selecciona el .deb de linux-image correcto en el indice de Debian trixie.
+"""Selecciona paquetes del kernel de Debian en el indice de trixie.
 
 Se hace en python y no en awk/grep por dos trampas concretas que ya costaron
 tiempo:
@@ -14,14 +14,22 @@ tiempo:
 Ademas, filtrar el parrafo entero con `!/-dbg/` no vale: la DESCRIPCION de cada
 paquete de kernel menciona su paquete -dbg, con lo que se excluirian todos. Hay
 que mirar SOLO el campo Package.
+
+Uso:
+    pick-kernel.py <Packages> image      -> ruta del .deb de linux-image
+    pick-kernel.py <Packages> headers    -> ruta del .deb de linux-headers
+
+IMPORTANTE: el paquete de headers NO se llama `linux-headers-6.12-amd64`. En
+Debian lleva la version completa: `linux-headers-6.12.107+deb13-amd64`. Ese
+nombre inventado hizo fallar el job de build contra Debian y el de la VM.
 """
 import re
 import sys
 
-# El nombre es "linux-image-6.12.<upstream>+deb13<->amd64": OJO, que despues de
-# "deb13" NO hay numero de revision (a diferencia de "6.12.107-1"). Por eso el
-# grupo de captura es el numero upstream, no el de debian.
-CANDIDATE = re.compile(r"^linux-image-6\.12\.(\d+)\+deb13-amd64$")
+# "6.12.<upstream>+deb<rel>-amd64", y opcionalmente el sufijo de flavour
+# (cloud, rt) que NO queremos: son kernels recortados.
+KERNEL_RE = re.compile(r"^linux-image-6\.12\.(\d+)\+deb13(?:-amd64|-amd64)$")
+HEADERS_RE = re.compile(r"^linux-headers-6\.12\.(\d+)\+deb13-amd64$")
 
 
 def parse_index(path: str) -> dict:
@@ -45,23 +53,36 @@ def parse_index(path: str) -> dict:
     return pkgs
 
 
-def main() -> int:
-    index = sys.argv[1] if len(sys.argv) > 1 else "P"
-    pkgs = parse_index(index)
-
-    # Solo el paquete del kernel, no el -dbg (simbolos) ni el -unsigned, ni las
-    # variantes cloud/rt. El regex ya excluye cloud y rt por el sufijo.
+def pick(pkgs: dict, pattern: re.Pattern):
+    """Devuelve (nombre, metadata) de la version mas nueva que case."""
     best = None
     for name, meta in pkgs.items():
-        m = CANDIDATE.match(name)
+        m = pattern.match(name)
         if not m:
             continue
         key = (int(m.group(1)), meta.get("Version", ""))
         if best is None or key > best[0]:
             best = (key, name, meta)
+    return best
 
+
+def main() -> int:
+    if len(sys.argv) < 3:
+        print(__doc__, file=sys.stderr)
+        return 2
+    index, what = sys.argv[1], sys.argv[2]
+    pkgs = parse_index(index)
+
+    pattern = {"image": KERNEL_RE, "headers": HEADERS_RE}.get(what)
+    if pattern is None:
+        print(f"ERROR: modo '{what}' desconocido (use image|headers)",
+              file=sys.stderr)
+        return 2
+
+    best = pick(pkgs, pattern)
     if not best:
-        print("ERROR: no hay linux-image-6.12 en el indice", file=sys.stderr)
+        print(f"ERROR: no hay linux-{what} 6.12 en el indice",
+              file=sys.stderr)
         return 1
 
     _, name, meta = best
@@ -69,6 +90,7 @@ def main() -> int:
     if not fn:
         print(f"ERROR: {name} no tiene campo Filename", file=sys.stderr)
         return 1
+    # Nombre y ruta, en ese orden, para que el script los lea linea a linea.
     print(name)
     print(fn)
     return 0

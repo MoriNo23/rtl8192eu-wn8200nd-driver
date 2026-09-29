@@ -248,11 +248,17 @@ jobs:
           echo "SMATCH_BIN=$RUNNER_TEMP/smatch/smatch" >> "$GITHUB_ENV"
           ls -la "$SMATCH_BIN"
           # checkpatch.pl del paquete linux-source. El paquete deja el tarball
-          # en un symlink /usr/src/linux-source-<ver>.tar.<ext> cuya extension
-          # depende de la version (xz en trixie, bz2 en Ubuntu 24.04), asi que
-          # se busca sin asumir extension.
-          src=$(find /usr/src -maxdepth 1 -name 'linux-source*.tar.*' | head -1)
-          test -n "$src" || { echo "::error::no se encontro el tarball de linux-source"; exit 1; }
+          # en un symlink cuyo nombre lleva la version, y hay que buscarlo sin
+          # asumir la extension (que cambia entre distribuciones: xz en trixie,
+          # bz2 en Ubuntu 24.04). Si no aparece, se imprime /usr/src para que el
+          # log diga QUE hay, en vez de un error sin contexto.
+          src=$(find /usr/src -maxdepth 1 -name 'linux-source*.tar.*' 2>/dev/null | head -1)
+          if [ -z "$src" ]; then
+            echo "::error::no se encontro el tarball de linux-source bajo /usr/src"
+            echo "::error::contenido de /usr/src:"
+            ls -la /usr/src
+            exit 1
+          fi
           echo "checkpatch source: $src"
           mkdir -p "$RUNNER_TEMP/lksrc"
           tar -C "$RUNNER_TEMP/lksrc" -xf "$src" --strip-components=1 \
@@ -361,14 +367,25 @@ jobs:
             exit 1
           fi
           echo "OK: el default es un valor que el driver honra sin sustituirlo"
-          # El enum del fuente y el valor por defecto no pueden divergir.
-          dma=$(sed -n 's/^[[:space:]]*RX_AGG_DISABLE,.*/0/p;/^[[:space:]]*RX_AGG_DMA,.*/1/p' \
-                driver/include/hal_data.h | head -1)
-          if [ "$dma" != "1" ]; then
-            echo "::error::no se pudo confirmar RX_AGG_DMA=1 en hal_data.h"
+          # El enum de hal_data.h tiene que seguir diciendo que RX_AGG_DMA es el
+          # indice 1 y RX_AGG_DISABLE el 0, porque de eso depende la coaccion.
+          # Se comprueba la DISTANCIA entre ambos, no un numero suelto: un
+          # `sed` con dos sustituciones encadenadas devolvia el primer patron
+          # que casaba (RX_AGG_DISABLE) y hacia fallar esta asercion sin que
+          # hubiera nada mal en el codigo.
+          d_off=$(grep -n 'RX_AGG_DISABLE' driver/include/hal_data.h | head -1 | cut -d: -f1)
+          d_dma=$(grep -n 'RX_AGG_DMA,' driver/include/hal_data.h | head -1 | cut -d: -f1)
+          d_usb=$(grep -n 'RX_AGG_USB,' driver/include/hal_data.h | head -1 | cut -d: -f1)
+          if [ -z "$d_off" ] || [ -z "$d_dma" ] || [ -z "$d_usb" ]; then
+            echo "::error::no se encontraron los tres miembros de RX_AGG_MODE en hal_data.h"
             exit 1
           fi
-          echo "OK: RX_AGG_DMA=1 confirmado en hal_data.h"
+          if [ $(( d_dma - d_off )) -ne 1 ] || [ $(( d_usb - d_dma )) -ne 1 ]; then
+            echo "::error::el enum RX_AGG_MODE no es consecutivo (DISABLE@$d_off, DMA@$d_dma, USB@$d_usb)"
+            echo "::error::la asercion anti-sustitucion asumia los valores 0, 1 y 2"
+            exit 1
+          fi
+          echo "OK: RX_AGG_MODE es consecutivo: DISABLE=0, DMA=1, USB=2"
 
       - name: "Invariantes: nada fija el dominio regulatorio"
         # La region la impone la red a la que se asocia (country IE del AP).
@@ -475,12 +492,16 @@ jobs:
           set -e
           apt-get update -qq
           apt-get install -y -qq --no-install-recommends \
-            build-essential bc kmod rsync linux-headers-6.12-amd64
-          # El paquete puede llamarse linux-headers-6.12-amd64 sin existir en
-          # este momento del ciclo de trixie; se acepta el sufijo generico.
-          if [ ! -d /lib/modules/6.12.*/build ]; then
-            apt-get install -y -qq --no-install-recommends "linux-headers-6.12*"
-          fi
+            build-essential bc kmod rsync ca-certificates curl gzip
+          # El paquete de headers de Debian NO se llama linux-headers-6.12-amd64:
+          # lleva la version completa (linux-headers-6.12.<n>+deb<rel>-amd64). El
+          # nombre inventado hacia fallar este job. Se busca en el indice.
+          base="http://deb.debian.org/debian"
+          curl -sSf "$base/dists/trixie/main/binary-amd64/Packages.gz" -o /tmp/P.gz
+          gzip -df /tmp/P.gz
+          pkg=$(ci/vm/pick-kernel.py /tmp/P headers | head -1)
+          echo "paquete de headers: $pkg"
+          apt-get install -y -qq --no-install-recommends "$pkg"
 
       - name: Detectar KVER de los headers 6.12
         id: kver
@@ -599,6 +620,11 @@ jobs:
   vm-load-test:
     name: "VM: carga y descarga del modulo"
     needs: sanity
+    # Contenedor Debian y NO ubuntu: el .ko tiene que compilarse contra el MISMO
+    # kernel que luego corre dentro de la VM. Con headers de Ubuntu, el modulo
+    # se compila para un kernel distinto del que carga, y el veredicto seria el
+    # de un "version magic mismatch", no el del driver.
+    container: debian:trixie
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -606,15 +632,16 @@ jobs:
       - name: "Toolchain: QEMU, busybox y headers del kernel del despliegue"
         run: |
           set -e
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq --no-install-recommends \
-            qemu-system-x86 cpio gzip busybox-static kmod bc
+          apt-get update -qq
+          apt-get install -y -qq --no-install-recommends \
+            qemu-system-x86 cpio gzip busybox-static kmod bc ca-certificates curl
           qemu-system-x86_64 --version | head -1
-          # El kernel del despliegue (Debian 6.12). Se compila el .ko contra el
-          # MISMO kernel que corre dentro de la VM: compilar contra un kernel y
-          # cargar en otro solo valdría si coincidence, no por diseño.
-          sudo apt-get install -y -qq --no-install-recommends \
-            linux-headers-6.12-amd64 kmod
+          base="http://deb.debian.org/debian"
+          curl -sSf "$base/dists/trixie/main/binary-amd64/Packages.gz" -o /tmp/P.gz
+          gzip -df /tmp/P.gz
+          pkg=$(ci/vm/pick-kernel.py /tmp/P headers | head -1)
+          echo "paquete de headers: $pkg"
+          apt-get install -y -qq --no-install-recommends "$pkg"
           kver=""
           for d in $(ls -1 /lib/modules | grep '^6\.12\.' | sort -V -r); do
             if [ -f "/lib/modules/$d/build/Makefile" ]; then kver="$d"; break; fi
@@ -630,27 +657,17 @@ jobs:
           make -j"$(nproc)" all \
             KVER="${KVER}" KSRC="/lib/modules/${KVER}/build"
           test -f driver/8192eu.ko
+          modinfo driver/8192eu.ko | grep -E '^vermagic'
 
       - name: "Bajar el paquete del kernel para la VM"
-        # El initramfs necesita el vmlinuz y los modulos. Se baja el .deb del
-        # repositorio de Debian en vez de usar el kernel del runner (Ubuntu): la
-        # VM tiene que correr el kernel del despliegue.
+        # El initramfs necesita el vmlinuz y los modulos, del MISMO kernel.
         run: |
           set -e
-          cd "$RUNNER_TEMP"
           base="http://deb.debian.org/debian"
-          # amd64, trixie. Se pide el indice para resolver la version exacta.
-          curl -sSf "$base/dists/trixie/main/binary-amd64/Packages.gz" \
-            | gzip -d \
-            | awk -v RS='' '/^Package: linux-image-[0-9]/{print}' \
-            | grep -A20 "^Package: linux-image-6.12" \
-            | grep -m1 '^Filename:' \
-            | awk '{print $2}' > pkgpath
-          test -s pkgpath || { echo "::error::no se encontro linux-image-6.12"; exit 1; }
-          url="$base/$(cat pkgpath)"
-          echo "bajando $url"
-          curl -sSfL -o kernel.deb "$url"
-          ls -la kernel.deb
+          fn=$(ci/vm/pick-kernel.py /tmp/P image | tail -1)
+          echo "bajando $base/$fn"
+          curl -sSfL -o "${{ runner.temp }}/kernel.deb" "$base/$fn"
+          ls -la "${{ runner.temp }}/kernel.deb"
 
       - name: "Construir la imagen de la VM"
         run: |
