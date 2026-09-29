@@ -245,8 +245,15 @@ jobs:
           git clone --depth 1 https://github.com/error27/smatch.git
           cd smatch
           sudo make -j"$(nproc)"
+          # OJO: antes se hacia `ls -la "$SMATCH_BIN"` aqui, dentro del MISMO
+          # paso que la define. GITHUB_ENV solo aplica al paso SIGUIENTE, asi que
+          # en este punto la variable estaba vacia y el log decia
+          # "ls: cannot access ''", sin explicar nada. Se comprueba la ruta
+          # literal, que si existe, y se exporta para el paso siguiente.
+          test -x "$RUNNER_TEMP/smatch/smatch" \
+              || { echo "::error::smatch no se compilo en $RUNNER_TEMP/smatch/smatch"; exit 1; }
           echo "SMATCH_BIN=$RUNNER_TEMP/smatch/smatch" >> "$GITHUB_ENV"
-          ls -la "$SMATCH_BIN"
+          ls -la "$RUNNER_TEMP/smatch/smatch"
           # checkpatch.pl del paquete linux-source. El paquete deja el tarball
           # en un symlink cuyo nombre lleva la version, y hay que buscarlo sin
           # asumir la extension (que cambia entre distribuciones: xz en trixie,
@@ -390,17 +397,30 @@ jobs:
       - name: "Invariantes: nada fija el dominio regulatorio"
         # La region la impone la red a la que se asocia (country IE del AP).
         # El proyecto no debe alterar el dominio regulatorio ni forzar pais.
+        #
+        # Solo se miran ficheros EJECUTABLES (scripts y unidades systemd), no la
+        # documentacion. Antes el grep incluia '*.md' y se quejaba de si mismo:
+        # AGENTS.md explica por que NO hay que forzar la region, asi que el
+        # patron encontraba el texto que documenta la PROHIBICION y lo reportaba
+        # como infraccion. Lo que importa es si algo lo ejecuta.
         run: |
           set -e
-          hits=$(grep -rnE "iw[[:space:]]+reg[[:space:]]+set" \
-                 --include='*.sh' --include='*.service' --include='*.md' \
-                 . 2>/dev/null | grep -v "^\./docs/" || true)
+          hits=$(grep -rnE "^[^#]*iw[[:space:]]+reg[[:space:]]+set" \
+                 --include='*.sh' --include='*.service' . 2>/dev/null || true)
           if [ -n "$hits" ]; then
-            echo "::error::el repo contiene una orden de 'iw reg set':"
+            echo "::error::el repo EJECUTA una orden de 'iw reg set':"
             echo "$hits"
             exit 1
           fi
-          echo "OK: ninguna orden de 'iw reg set' en el repo"
+          echo "OK: ningun script ni unidad ejecuta 'iw reg set'"
+          # Y al reves: la nota que explica que la region viene de la red tiene
+          # que seguir existiendo. Si desaparece, la invariante queda sin
+          # explicar justo cuando haria falta.
+          if ! grep -rq "reg set" AGENTS.md docs/ 2>/dev/null; then
+            echo "::error::no queda documentado por que NO se fija la region"
+            exit 1
+          fi
+          echo "OK: la invariante de la region sigue documentada"
           # rtw_country_code no debe forzarse en la configuracion de modprobe.
           if grep -rn "rtw_country_code" /etc/modprobe.d/ 2>/dev/null; then
             echo "::error::rtw_country_code esta forzado en /etc/modprobe.d"
@@ -492,14 +512,14 @@ jobs:
           set -e
           apt-get update -qq
           apt-get install -y -qq --no-install-recommends \
-            build-essential bc kmod rsync ca-certificates curl gzip
+            build-essential bc kmod rsync ca-certificates curl gzip python3
           # El paquete de headers de Debian NO se llama linux-headers-6.12-amd64:
           # lleva la version completa (linux-headers-6.12.<n>+deb<rel>-amd64). El
           # nombre inventado hacia fallar este job. Se busca en el indice.
           base="http://deb.debian.org/debian"
           curl -sSf "$base/dists/trixie/main/binary-amd64/Packages.gz" -o /tmp/P.gz
           gzip -df /tmp/P.gz
-          pkg=$(ci/vm/pick-kernel.py /tmp/P headers | head -1)
+          pkg=$(python3 ci/vm/pick-kernel.py /tmp/P headers | head -1)
           echo "paquete de headers: $pkg"
           apt-get install -y -qq --no-install-recommends "$pkg"
 
@@ -634,12 +654,20 @@ jobs:
           set -e
           apt-get update -qq
           apt-get install -y -qq --no-install-recommends \
-            qemu-system-x86 cpio gzip busybox-static kmod bc ca-certificates curl
+            qemu-system-x86 cpio gzip busybox-static kmod bc \
+            ca-certificates curl python3
           qemu-system-x86_64 --version | head -1
           base="http://deb.debian.org/debian"
           curl -sSf "$base/dists/trixie/main/binary-amd64/Packages.gz" -o /tmp/P.gz
           gzip -df /tmp/P.gz
-          pkg=$(ci/vm/pick-kernel.py /tmp/P headers | head -1)
+          pkg=$(python3 ci/vm/pick-kernel.py /tmp/P headers | head -1)
+          # Un $pkg vacio llegaria a `apt-get install ""` sin fallar de forma
+          # util, y el error apareceria cuatro pasos mas tarde como "no hay
+          # arbol de headers", que no dice nada de la causa.
+          if [ -z "$pkg" ]; then
+            echo "::error::pick-kernel.py no devolvio paquete de headers"
+            exit 1
+          fi
           echo "paquete de headers: $pkg"
           apt-get install -y -qq --no-install-recommends "$pkg"
           kver=""
@@ -664,7 +692,8 @@ jobs:
         run: |
           set -e
           base="http://deb.debian.org/debian"
-          fn=$(ci/vm/pick-kernel.py /tmp/P image | tail -1)
+          fn=$(python3 ci/vm/pick-kernel.py /tmp/P image | tail -1)
+          [ -n "$fn" ] || { echo "::error::pick-kernel no devolvio el paquete del kernel"; exit 1; }
           echo "bajando $base/$fn"
           curl -sSfL -o "${{ runner.temp }}/kernel.deb" "$base/$fn"
           ls -la "${{ runner.temp }}/kernel.deb"
