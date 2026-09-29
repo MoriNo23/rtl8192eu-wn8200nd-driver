@@ -259,8 +259,17 @@ extract_findings() {
 #
 # Solo se descartan rutas absolutas fuera del arbol. Las relativas se conservan,
 # porque checkpatch y los demas ya recorren unicamente driver/.
+#
+# La ruta se normaliza SIEMPRE a la forma relativa DENTRO de driver/:
+#     <lo que sea>/include/wifi.h   ->  include/wifi.h
+# Es indispensable, porque las tres herramientas no emiten la ruta igual:
+# sparse y smatch la emiten segun como el kernel se la pase, y eso cambia entre
+# un build local (M=/ruta/absoluta -> "driver/include/wifi.h") y el del runner,
+# donde el path sale relativo ("include/wifi.h"). Sin esta normalizacion, el
+# baseline generado en un sitio no casa nunca con la ejecucion en el otro, y el
+# job reporta como "nuevos" hallazgos que ya estaban.
 normalize() {
-    sed -e "s|^$REPO_ROOT/||" -e 's|^\./||' \
+    sed -e "s|^$REPO_ROOT/||" -e 's|^\./||' -e 's|^driver/||' \
     | awk '
         # cabeceras del kernel y del sistema, en cualquier version
         /^\/usr\/src\//     { next }

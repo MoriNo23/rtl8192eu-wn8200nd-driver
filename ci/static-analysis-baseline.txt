@@ -1,383 +1,383 @@
 ## sparse
 arch/x86/include/asm/uaccess_64.h: warning: cast removes address space '__user' of expression
-driver/core/efuse/rtw_efuse.c: warning: Using plain integer as NULL pointer
-driver/core/efuse/rtw_efuse.c: warning: cast from non-scalar
-driver/core/efuse/rtw_efuse.c: warning: cast to non-scalar
-driver/core/monitor/rtw_radiotap.c: warning: cast from restricted __le32
-driver/core/monitor/rtw_radiotap.c: warning: incorrect type in assignment (different base types)
-driver/core/monitor/rtw_radiotap.c: warning: invalid assignment: |=
-driver/core/rtw_ap.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_ap.c: warning: cast to restricted __le16
-driver/core/rtw_ap.c: warning: cast truncates bits from constant value (ffffff00 becomes 0)
-driver/core/rtw_ap.c: warning: incorrect type in assignment (different base types)
-driver/core/rtw_ap.c: warning: restricted __le16 degrades to integer
-driver/core/rtw_br_ext.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_br_ext.c: warning: cast to restricted __be16
-driver/core/rtw_br_ext.c: warning: incorrect type in argument 2 (different base types)
-driver/core/rtw_br_ext.c: warning: incorrect type in argument 3 (different base types)
-driver/core/rtw_br_ext.c: warning: incorrect type in assignment (different base types)
-driver/core/rtw_br_ext.c: warning: invalid assignment: |=
-driver/core/rtw_br_ext.c: warning: restricted __be16 degrades to integer
-driver/core/rtw_br_ext.c: warning: restricted __be32 degrades to integer
-driver/core/rtw_br_ext.c: warning: restricted __sum16 degrades to integer
-driver/core/rtw_chplan.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_chplan.c: warning: symbol 'RTW_ChannelPlanMap_size' was not declared. Should it be static?
-driver/core/rtw_debug.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_debug.c: warning: cast to restricted __be16
-driver/core/rtw_debug.c: warning: restricted __be16 degrades to integer
-driver/core/rtw_ieee80211.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_ieee80211.c: warning: cast to restricted __le16
-driver/core/rtw_ieee80211.c: warning: incorrect type in assignment (different base types)
-driver/core/rtw_ieee80211.c: warning: invalid assignment: |=
-driver/core/rtw_ieee80211.c: warning: symbol 'RSN_CIPHER_SUITE_AES_128_CMAC' was not declared. Should it be static?
-driver/core/rtw_ieee80211.c: warning: symbol 'RSN_CIPHER_SUITE_BIP_CMAC_256' was not declared. Should it be static?
-driver/core/rtw_ieee80211.c: warning: symbol 'RSN_CIPHER_SUITE_BIP_GMAC_128' was not declared. Should it be static?
-driver/core/rtw_ieee80211.c: warning: symbol 'RSN_CIPHER_SUITE_BIP_GMAC_256' was not declared. Should it be static?
-driver/core/rtw_ieee80211.c: warning: symbol 'WIFI_CCKRATES' was not declared. Should it be static?
-driver/core/rtw_ieee80211.c: warning: symbol 'WIFI_OFDMRATES' was not declared. Should it be static?
-driver/core/rtw_io.c: warning: cast to restricted __le16
-driver/core/rtw_io.c: warning: cast to restricted __le32
-driver/core/rtw_io.c: warning: incorrect type in assignment (different base types)
-driver/core/rtw_ioctl_set.c: warning: context imbalance in 'rtw_set_802_11_infrastructure_mode' - different lock contexts for basic block
-driver/core/rtw_mi.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_mi.c: warning: cast to restricted __le16
-driver/core/rtw_mlme.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_mlme.c: warning: cast to restricted __be16
-driver/core/rtw_mlme.c: warning: cast to restricted __le16
-driver/core/rtw_mlme.c: warning: context imbalance in 'rtw_free_assoc_resources' - different lock contexts for basic block
-driver/core/rtw_mlme.c: warning: context imbalance in 'rtw_select_roaming_candidate' - unexpected unlock
-driver/core/rtw_mlme_ext.c: warning: 'strcmp' reading 1 or more bytes from a region of size 0 [-Wstringop-overread]
-driver/core/rtw_mlme_ext.c: warning: cast to restricted __le16
-driver/core/rtw_mlme_ext.c: warning: incorrect type in assignment (different base types)
-driver/core/rtw_mlme_ext.c: warning: invalid assignment: &=
-driver/core/rtw_mlme_ext.c: warning: invalid assignment: |=
-driver/core/rtw_mlme_ext.c: warning: restricted __le16 degrades to integer
-driver/core/rtw_mlme_ext.c: warning: symbol 'DPP_OUI' was not declared. Should it be static?
-driver/core/rtw_mlme_ext.c: warning: symbol 'OnAction_tbl' was not declared. Should it be static?
-driver/core/rtw_mlme_ext.c: warning: symbol 'RSN_TKIP_CIPHER' was not declared. Should it be static?
-driver/core/rtw_mlme_ext.c: warning: symbol 'WPA_TKIP_CIPHER' was not declared. Should it be static?
-driver/core/rtw_mlme_ext.c: warning: symbol 'mlme_sta_tbl' was not declared. Should it be static?
-driver/core/rtw_mlme_ext.c: warning: symbol 'null_addr' was not declared. Should it be static?
-driver/core/rtw_mlme_ext.c: warning: too many warnings
-driver/core/rtw_odm.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_odm.c: warning: context imbalance in 'rtw_odm_acquirespinlock' - wrong count at exit
-driver/core/rtw_odm.c: warning: context imbalance in 'rtw_odm_releasespinlock' - unexpected unlock
-driver/core/rtw_recv.c: warning: cast to restricted __be16
-driver/core/rtw_recv.c: warning: cast to restricted __le16
-driver/core/rtw_recv.c: warning: cast to restricted __le64
-driver/core/rtw_recv.c: warning: incorrect type in assignment (different base types)
-driver/core/rtw_recv.c: warning: restricted __le16 degrades to integer
-driver/core/rtw_recv.c: warning: symbol 'signal_stat_calc_profile' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: 'strcmp' reading 1 or more bytes from a region of size 0 [-Wstringop-overread]
-driver/core/rtw_rf.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_rf.c: warning: symbol 'center_ch_5g_160m' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: symbol 'center_chs_2g_by_bw' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: symbol 'center_chs_5g_by_bw' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: symbol 'op_chs_of_cch_2g_40m' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: symbol 'op_chs_of_cch_2g_by_bw' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: symbol 'op_chs_of_cch_5g_160m' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: symbol 'op_chs_of_cch_5g_40m' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: symbol 'op_chs_of_cch_5g_80m' was not declared. Should it be static?
-driver/core/rtw_rf.c: warning: symbol 'op_chs_of_cch_5g_by_bw' was not declared. Should it be static?
-driver/core/rtw_roch.c: warning: no newline at end of file
-driver/core/rtw_security.c: warning: cast to restricted __le16
-driver/core/rtw_security.c: warning: cast to restricted __le32
-driver/core/rtw_security.c: warning: cast to restricted __le64
-driver/core/rtw_security.c: warning: incorrect type in assignment (different base types)
-driver/core/rtw_security.c: warning: invalid assignment: &=
-driver/core/rtw_sreset.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_sta_mgt.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_sta_mgt.c: warning: cast to restricted __be16
-driver/core/rtw_sta_mgt.c: warning: symbol 'test_st_reg' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: error: incompatible types in conditional expression (different base types):
-driver/core/rtw_wlan_util.c: warning: Using plain integer as NULL pointer
-driver/core/rtw_wlan_util.c: warning: cast to restricted __be16
-driver/core/rtw_wlan_util.c: warning: cast to restricted __le16
-driver/core/rtw_wlan_util.c: warning: cast to restricted __le32
-driver/core/rtw_wlan_util.c: warning: restricted __le16 degrades to integer
-driver/core/rtw_wlan_util.c: warning: symbol 'AIRGOCAP_OUI' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'ARTHEROS_OUI1' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'ARTHEROS_OUI2' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'BROADCOM_OUI1' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'BROADCOM_OUI2' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'BROADCOM_OUI3' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'CISCO_OUI' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'MARVELL_OUI' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'RALINK_OUI' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'REALTEK_96B_IE' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'REALTEK_OUI' was not declared. Should it be static?
-driver/core/rtw_wlan_util.c: warning: symbol 'support_rate_ranges' was not declared. Should it be static?
-driver/core/rtw_xmit.c: warning: cast to restricted __be16
-driver/core/rtw_xmit.c: warning: cast to restricted __le16
-driver/core/rtw_xmit.c: warning: cast to restricted __le32
-driver/core/rtw_xmit.c: warning: cast truncates bits from constant value (ffff000f becomes f)
-driver/core/rtw_xmit.c: warning: incorrect type in assignment (different base types)
-driver/core/rtw_xmit.c: warning: invalid assignment: &=
-driver/core/rtw_xmit.c: warning: invalid assignment: |=
-driver/core/rtw_xmit.c: warning: restricted __be16 degrades to integer
-driver/core/rtw_xmit.c: warning: restricted __le16 degrades to integer
-driver/hal/efuse/rtl8192e/HalEfuseMask8192E_USB.c: warning: symbol 'Array_MP_8192E_MUSB' was not declared. Should it be static?
-driver/hal/hal_com.c: warning: Using plain integer as NULL pointer
-driver/hal/hal_com.c: warning: cast from non-scalar
-driver/hal/hal_com.c: warning: cast to non-scalar
-driver/hal/hal_com.c: warning: cast to restricted __le16
-driver/hal/hal_com.c: warning: incorrect type in assignment (different base types)
-driver/hal/hal_com.c: warning: invalid assignment: &=
-driver/hal/hal_com.c: warning: invalid assignment: |=
-driver/hal/hal_com.c: warning: too many warnings
-driver/hal/hal_com_phycfg.c: warning: Using plain integer as NULL pointer
-driver/hal/hal_com_phycfg.c: warning: symbol '_pg_txpwr_src_str' was not declared. Should it be static?
-driver/hal/hal_com_phycfg.c: warning: symbol 'pg_txpwr_def_info' was not declared. Should it be static?
-driver/hal/hal_dm.c: warning: Using plain integer as NULL pointer
-driver/hal/hal_dm.c: warning: cast from non-scalar
-driver/hal/hal_dm.c: warning: cast to non-scalar
-driver/hal/hal_intf.c: warning: Using plain integer as NULL pointer
-driver/hal/hal_intf.c: warning: cast from non-scalar
-driver/hal/hal_intf.c: warning: cast to non-scalar
-driver/hal/phydm/halrf/halrf.c: warning: switch with no cases
-driver/hal/phydm/halrf/halrf_debug.c: warning: switch with no cases
-driver/hal/phydm/halrf/halrf_debug.c: warning: symbol 'halrf_cmd_ary' was not declared. Should it be static?
-driver/hal/phydm/phydm_debug.c: warning: Using plain integer as NULL pointer
-driver/hal/phydm/phydm_debug.c: warning: symbol 'phy_dm_ary' was not declared. Should it be static?
-driver/hal/phydm/phydm_math_lib.c: warning: symbol 'db_invert_table' was not declared. Should it be static?
-driver/hal/phydm/phydm_psd.c: warning: symbol 'psd_result_cali_tone_8821' was not declared. Should it be static?
-driver/hal/phydm/phydm_psd.c: warning: symbol 'psd_result_cali_val_8821' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_bb.c: warning: symbol 'array_mp_8192e_agc_tab' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_bb.c: warning: symbol 'array_mp_8192e_phy_reg' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_bb.c: warning: symbol 'array_mp_8192e_phy_reg_pg' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_mac.c: warning: symbol 'array_mp_8192e_mac_reg' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'array_mp_8192e_radioa' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'array_mp_8192e_radiob' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'array_mp_8192e_txpwr_lmt' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'array_mp_8192e_txpwr_lmt_8192e_sar_5mm' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2g_cck_a_n_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2g_cck_a_p_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2g_cck_b_n_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2g_cck_b_p_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2ga_n_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2ga_p_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2gb_n_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2gb_p_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_5ga_n_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_5ga_p_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_5gb_n_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_5gb_p_txpowertrack_usb_8192e' was not declared. Should it be static?
-driver/hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_length_mp_8192e_fw_nic' was not declared. Should it be static?
-driver/hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_length_mp_8192e_fw_nic_setupbox' was not declared. Should it be static?
-driver/hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_length_mp_8192e_fw_wowlan' was not declared. Should it be static?
-driver/hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_mp_8192e_fw_nic' was not declared. Should it be static?
-driver/hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_mp_8192e_fw_nic_setupbox' was not declared. Should it be static?
-driver/hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_mp_8192e_fw_wowlan' was not declared. Should it be static?
-driver/hal/rtl8192e/rtl8192e_cmd.c: warning: cast to restricted __le16
-driver/hal/rtl8192e/rtl8192e_cmd.c: warning: cast truncates bits from constant value (ffffff00 becomes 0)
-driver/hal/rtl8192e/rtl8192e_cmd.c: warning: cast truncates bits from constant value (ffffff0f becomes f)
-driver/hal/rtl8192e/rtl8192e_dm.c: warning: cast from non-scalar
-driver/hal/rtl8192e/rtl8192e_dm.c: warning: cast to non-scalar
-driver/hal/rtl8192e/rtl8192e_hal_init.c: warning: Using plain integer as NULL pointer
-driver/hal/rtl8192e/rtl8192e_hal_init.c: warning: cast to restricted __le16
-driver/hal/rtl8192e/rtl8192e_hal_init.c: warning: cast to restricted __le32
-driver/hal/rtl8192e/rtl8192e_rxdesc.c: warning: cast to restricted __le32
-driver/hal/rtl8192e/rtl8192e_xmit.c: warning: cast to restricted __le16
-driver/hal/rtl8192e/rtl8192e_xmit.c: warning: cast to restricted __le32
-driver/hal/rtl8192e/rtl8192e_xmit.c: warning: incorrect type in assignment (different base types)
-driver/hal/rtl8192e/usb/rtl8192eu_xmit.c: warning: cast to restricted __le32
-driver/hal/rtl8192e/usb/rtl8192eu_xmit.c: warning: incorrect type in assignment (different base types)
-driver/hal/rtl8192e/usb/rtl8192eu_xmit.c: warning: too many warnings
-driver/hal/rtl8192e/usb/usb_halinit.c: warning: cast to restricted __le16
-driver/include/rtw_mlme_ext.h: warning: symbol 'wlancmds' was not declared. Should it be static?
-driver/include/wifi.h: warning: cast to restricted __le16
-driver/os_dep/linux/ioctl_cfg80211.c: warning: Using plain integer as NULL pointer
-driver/os_dep/linux/ioctl_cfg80211.c: warning: cast to restricted __le16
-driver/os_dep/linux/ioctl_cfg80211.c: warning: cast to restricted __le64
-driver/os_dep/linux/ioctl_cfg80211.c: warning: cast truncates bits from constant value (ffff000f becomes f)
-driver/os_dep/linux/ioctl_cfg80211.c: warning: incorrect type in assignment (different base types)
-driver/os_dep/linux/ioctl_cfg80211.c: warning: invalid assignment: &=
-driver/os_dep/linux/ioctl_cfg80211.c: warning: invalid assignment: |=
-driver/os_dep/linux/ioctl_cfg80211.c: warning: restricted __le16 degrades to integer
-driver/os_dep/linux/ioctl_cfg80211.c: warning: symbol '_nl80211_mesh_power_mode_str' was not declared. Should it be static?
-driver/os_dep/linux/ioctl_cfg80211.c: warning: symbol '_nl80211_plink_actions_str' was not declared. Should it be static?
-driver/os_dep/linux/ioctl_cfg80211.c: warning: symbol '_nl80211_plink_state_str' was not declared. Should it be static?
-driver/os_dep/linux/ioctl_cfg80211.c: warning: symbol '_nl80211_sta_flags_str' was not declared. Should it be static?
-driver/os_dep/linux/ioctl_linux.c: warning: Using plain integer as NULL pointer
-driver/os_dep/linux/ioctl_linux.c: warning: cast removes address space '__user' of expression
-driver/os_dep/linux/ioctl_linux.c: warning: cast to restricted __le16
-driver/os_dep/linux/ioctl_linux.c: warning: incorrect type in argument 1 (different address spaces)
-driver/os_dep/linux/ioctl_linux.c: warning: incorrect type in assignment (different base types)
-driver/os_dep/linux/ioctl_linux.c: warning: symbol 'rtw_rates' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: Using plain integer as NULL pointer
-driver/os_dep/linux/os_intfs.c: warning: symbol 'if2name' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'ifname' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_AcceptAddbaReq' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_FileMaskEfuse' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_GLNA_type' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_OffEfuseMask' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_RFE_type' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_TxBBSwing_2G' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_TxBBSwing_5G' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_ack_policy' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_acm_method' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_adaptivity_en' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_adaptivity_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_adaptivity_th_edcca_hl_diff' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_adaptivity_th_l2h_ini' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_ampdu_enable' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_amplifier_type_2g' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_amplifier_type_5g' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_amsdu_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_antdiv_cfg' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_antdiv_type' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_ap_fwd_b2u_flags' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_ap_src_b2u_flags' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_beamform_cap' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_bfee_rf_number' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_bfer_rf_number' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_bmc_tx_rate' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_busy_thresh' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_bw_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_channel' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_channel_plan' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_check_fw_ps' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_check_hw_status' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_chip_version' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_country_code' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_country_unspecified' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_drv_ant_band_switch' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_dynamic_agg_enable' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_enusbss' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_frag_thresh' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_full_ch_in_p2p_handshake' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_hiq_filter' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_ht_enable' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_hw_wps_pbc' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_hwpdn_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_hwpwrp_detect' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_initmac' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_ips_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_lbkmode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_ldpc_cap' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_long_retry_lmt' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_low_power' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_lps_chk_by_tp' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_lps_level' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_max_bss_cnt' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_max_roaming_times' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_mp_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_network_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_notch_filter' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_pci_aspm_enable' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_pci_dynamic_aspm_linkctrl' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_power_mgnt' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_powertracking_type' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_preamble' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_pwrtrim_enable' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_qos_opt_enable' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_quick_addba_req' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_radio_enable' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_rfintfs' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_rts_thresh' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_rx_ampdu_amsdu' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_rx_nss' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_rx_path_lmt' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_rx_stbc' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_rxgain_offset_2g' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_rxgain_offset_5gl' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_scan_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_short_gi' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_short_retry_lmt' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_single_ant_path' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_smart_ps' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_software_decrypt' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_software_encrypt' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_stbc_cap' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_switch_usb_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_trx_path_bmp' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_aclt_flags' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_ampdu_amsdu' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_bw_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_nss' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_path_lmt' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_usb_rxagg_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_vcs_type' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_vrtl_carrier_sense' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_wifi_spec' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_wireless_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_wmm_enable' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: symbol 'rtw_wowlan_sta_mix_mode' was not declared. Should it be static?
-driver/os_dep/linux/os_intfs.c: warning: too many warnings
-driver/os_dep/linux/recv_linux.c: warning: incorrect type in assignment (different base types)
-driver/os_dep/linux/rtw_android.c: warning: incorrect type in argument 1 (different address spaces)
-driver/os_dep/linux/rtw_android.c: warning: incorrect type in argument 2 (different address spaces)
-driver/os_dep/linux/rtw_android.c: warning: incorrect type in assignment (different address spaces)
-driver/os_dep/linux/rtw_android.c: warning: symbol 'android_wifi_cmd_str' was not declared. Should it be static?
-driver/os_dep/linux/rtw_android.c: warning: symbol 'oob_gpio' was not declared. Should it be static?
-driver/os_dep/linux/rtw_android.c: warning: symbol 'oob_irq' was not declared. Should it be static?
-driver/os_dep/linux/usb_intf.c: warning: Using plain integer as NULL pointer
-driver/os_dep/linux/usb_intf.c: warning: symbol 'rtw_usb_id_len' was not declared. Should it be static?
-driver/os_dep/linux/usb_intf.c: warning: symbol 'ui_pid' was not declared. Should it be static?
-driver/os_dep/linux/usb_intf.c: warning: symbol 'usb_drv' was not declared. Should it be static?
-driver/os_dep/linux/xmit_linux.c: warning: Using plain integer as NULL pointer
-driver/os_dep/osdep_service.c: warning: cast to restricted __be16
-driver/os_dep/osdep_service.c: warning: cast to restricted __be32
-driver/os_dep/osdep_service.c: warning: context imbalance in '_rtw_spinlock' - wrong count at exit
-driver/os_dep/osdep_service.c: warning: context imbalance in '_rtw_spinlock_ex' - wrong count at exit
-driver/os_dep/osdep_service.c: warning: context imbalance in '_rtw_spinunlock' - unexpected unlock
-driver/os_dep/osdep_service.c: warning: context imbalance in '_rtw_spinunlock_ex' - unexpected unlock
+core/efuse/rtw_efuse.c: warning: Using plain integer as NULL pointer
+core/efuse/rtw_efuse.c: warning: cast from non-scalar
+core/efuse/rtw_efuse.c: warning: cast to non-scalar
+core/monitor/rtw_radiotap.c: warning: cast from restricted __le32
+core/monitor/rtw_radiotap.c: warning: incorrect type in assignment (different base types)
+core/monitor/rtw_radiotap.c: warning: invalid assignment: |=
+core/rtw_ap.c: warning: Using plain integer as NULL pointer
+core/rtw_ap.c: warning: cast to restricted __le16
+core/rtw_ap.c: warning: cast truncates bits from constant value (ffffff00 becomes 0)
+core/rtw_ap.c: warning: incorrect type in assignment (different base types)
+core/rtw_ap.c: warning: restricted __le16 degrades to integer
+core/rtw_br_ext.c: warning: Using plain integer as NULL pointer
+core/rtw_br_ext.c: warning: cast to restricted __be16
+core/rtw_br_ext.c: warning: incorrect type in argument 2 (different base types)
+core/rtw_br_ext.c: warning: incorrect type in argument 3 (different base types)
+core/rtw_br_ext.c: warning: incorrect type in assignment (different base types)
+core/rtw_br_ext.c: warning: invalid assignment: |=
+core/rtw_br_ext.c: warning: restricted __be16 degrades to integer
+core/rtw_br_ext.c: warning: restricted __be32 degrades to integer
+core/rtw_br_ext.c: warning: restricted __sum16 degrades to integer
+core/rtw_chplan.c: warning: Using plain integer as NULL pointer
+core/rtw_chplan.c: warning: symbol 'RTW_ChannelPlanMap_size' was not declared. Should it be static?
+core/rtw_debug.c: warning: Using plain integer as NULL pointer
+core/rtw_debug.c: warning: cast to restricted __be16
+core/rtw_debug.c: warning: restricted __be16 degrades to integer
+core/rtw_ieee80211.c: warning: Using plain integer as NULL pointer
+core/rtw_ieee80211.c: warning: cast to restricted __le16
+core/rtw_ieee80211.c: warning: incorrect type in assignment (different base types)
+core/rtw_ieee80211.c: warning: invalid assignment: |=
+core/rtw_ieee80211.c: warning: symbol 'RSN_CIPHER_SUITE_AES_128_CMAC' was not declared. Should it be static?
+core/rtw_ieee80211.c: warning: symbol 'RSN_CIPHER_SUITE_BIP_CMAC_256' was not declared. Should it be static?
+core/rtw_ieee80211.c: warning: symbol 'RSN_CIPHER_SUITE_BIP_GMAC_128' was not declared. Should it be static?
+core/rtw_ieee80211.c: warning: symbol 'RSN_CIPHER_SUITE_BIP_GMAC_256' was not declared. Should it be static?
+core/rtw_ieee80211.c: warning: symbol 'WIFI_CCKRATES' was not declared. Should it be static?
+core/rtw_ieee80211.c: warning: symbol 'WIFI_OFDMRATES' was not declared. Should it be static?
+core/rtw_io.c: warning: cast to restricted __le16
+core/rtw_io.c: warning: cast to restricted __le32
+core/rtw_io.c: warning: incorrect type in assignment (different base types)
+core/rtw_ioctl_set.c: warning: context imbalance in 'rtw_set_802_11_infrastructure_mode' - different lock contexts for basic block
+core/rtw_mi.c: warning: Using plain integer as NULL pointer
+core/rtw_mi.c: warning: cast to restricted __le16
+core/rtw_mlme.c: warning: Using plain integer as NULL pointer
+core/rtw_mlme.c: warning: cast to restricted __be16
+core/rtw_mlme.c: warning: cast to restricted __le16
+core/rtw_mlme.c: warning: context imbalance in 'rtw_free_assoc_resources' - different lock contexts for basic block
+core/rtw_mlme.c: warning: context imbalance in 'rtw_select_roaming_candidate' - unexpected unlock
+core/rtw_mlme_ext.c: warning: 'strcmp' reading 1 or more bytes from a region of size 0 [-Wstringop-overread]
+core/rtw_mlme_ext.c: warning: cast to restricted __le16
+core/rtw_mlme_ext.c: warning: incorrect type in assignment (different base types)
+core/rtw_mlme_ext.c: warning: invalid assignment: &=
+core/rtw_mlme_ext.c: warning: invalid assignment: |=
+core/rtw_mlme_ext.c: warning: restricted __le16 degrades to integer
+core/rtw_mlme_ext.c: warning: symbol 'DPP_OUI' was not declared. Should it be static?
+core/rtw_mlme_ext.c: warning: symbol 'OnAction_tbl' was not declared. Should it be static?
+core/rtw_mlme_ext.c: warning: symbol 'RSN_TKIP_CIPHER' was not declared. Should it be static?
+core/rtw_mlme_ext.c: warning: symbol 'WPA_TKIP_CIPHER' was not declared. Should it be static?
+core/rtw_mlme_ext.c: warning: symbol 'mlme_sta_tbl' was not declared. Should it be static?
+core/rtw_mlme_ext.c: warning: symbol 'null_addr' was not declared. Should it be static?
+core/rtw_mlme_ext.c: warning: too many warnings
+core/rtw_odm.c: warning: Using plain integer as NULL pointer
+core/rtw_odm.c: warning: context imbalance in 'rtw_odm_acquirespinlock' - wrong count at exit
+core/rtw_odm.c: warning: context imbalance in 'rtw_odm_releasespinlock' - unexpected unlock
+core/rtw_recv.c: warning: cast to restricted __be16
+core/rtw_recv.c: warning: cast to restricted __le16
+core/rtw_recv.c: warning: cast to restricted __le64
+core/rtw_recv.c: warning: incorrect type in assignment (different base types)
+core/rtw_recv.c: warning: restricted __le16 degrades to integer
+core/rtw_recv.c: warning: symbol 'signal_stat_calc_profile' was not declared. Should it be static?
+core/rtw_rf.c: warning: 'strcmp' reading 1 or more bytes from a region of size 0 [-Wstringop-overread]
+core/rtw_rf.c: warning: Using plain integer as NULL pointer
+core/rtw_rf.c: warning: symbol 'center_ch_5g_160m' was not declared. Should it be static?
+core/rtw_rf.c: warning: symbol 'center_chs_2g_by_bw' was not declared. Should it be static?
+core/rtw_rf.c: warning: symbol 'center_chs_5g_by_bw' was not declared. Should it be static?
+core/rtw_rf.c: warning: symbol 'op_chs_of_cch_2g_40m' was not declared. Should it be static?
+core/rtw_rf.c: warning: symbol 'op_chs_of_cch_2g_by_bw' was not declared. Should it be static?
+core/rtw_rf.c: warning: symbol 'op_chs_of_cch_5g_160m' was not declared. Should it be static?
+core/rtw_rf.c: warning: symbol 'op_chs_of_cch_5g_40m' was not declared. Should it be static?
+core/rtw_rf.c: warning: symbol 'op_chs_of_cch_5g_80m' was not declared. Should it be static?
+core/rtw_rf.c: warning: symbol 'op_chs_of_cch_5g_by_bw' was not declared. Should it be static?
+core/rtw_roch.c: warning: no newline at end of file
+core/rtw_security.c: warning: cast to restricted __le16
+core/rtw_security.c: warning: cast to restricted __le32
+core/rtw_security.c: warning: cast to restricted __le64
+core/rtw_security.c: warning: incorrect type in assignment (different base types)
+core/rtw_security.c: warning: invalid assignment: &=
+core/rtw_sreset.c: warning: Using plain integer as NULL pointer
+core/rtw_sta_mgt.c: warning: Using plain integer as NULL pointer
+core/rtw_sta_mgt.c: warning: cast to restricted __be16
+core/rtw_sta_mgt.c: warning: symbol 'test_st_reg' was not declared. Should it be static?
+core/rtw_wlan_util.c: error: incompatible types in conditional expression (different base types):
+core/rtw_wlan_util.c: warning: Using plain integer as NULL pointer
+core/rtw_wlan_util.c: warning: cast to restricted __be16
+core/rtw_wlan_util.c: warning: cast to restricted __le16
+core/rtw_wlan_util.c: warning: cast to restricted __le32
+core/rtw_wlan_util.c: warning: restricted __le16 degrades to integer
+core/rtw_wlan_util.c: warning: symbol 'AIRGOCAP_OUI' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'ARTHEROS_OUI1' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'ARTHEROS_OUI2' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'BROADCOM_OUI1' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'BROADCOM_OUI2' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'BROADCOM_OUI3' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'CISCO_OUI' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'MARVELL_OUI' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'RALINK_OUI' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'REALTEK_96B_IE' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'REALTEK_OUI' was not declared. Should it be static?
+core/rtw_wlan_util.c: warning: symbol 'support_rate_ranges' was not declared. Should it be static?
+core/rtw_xmit.c: warning: cast to restricted __be16
+core/rtw_xmit.c: warning: cast to restricted __le16
+core/rtw_xmit.c: warning: cast to restricted __le32
+core/rtw_xmit.c: warning: cast truncates bits from constant value (ffff000f becomes f)
+core/rtw_xmit.c: warning: incorrect type in assignment (different base types)
+core/rtw_xmit.c: warning: invalid assignment: &=
+core/rtw_xmit.c: warning: invalid assignment: |=
+core/rtw_xmit.c: warning: restricted __be16 degrades to integer
+core/rtw_xmit.c: warning: restricted __le16 degrades to integer
+hal/efuse/rtl8192e/HalEfuseMask8192E_USB.c: warning: symbol 'Array_MP_8192E_MUSB' was not declared. Should it be static?
+hal/hal_com.c: warning: Using plain integer as NULL pointer
+hal/hal_com.c: warning: cast from non-scalar
+hal/hal_com.c: warning: cast to non-scalar
+hal/hal_com.c: warning: cast to restricted __le16
+hal/hal_com.c: warning: incorrect type in assignment (different base types)
+hal/hal_com.c: warning: invalid assignment: &=
+hal/hal_com.c: warning: invalid assignment: |=
+hal/hal_com.c: warning: too many warnings
+hal/hal_com_phycfg.c: warning: Using plain integer as NULL pointer
+hal/hal_com_phycfg.c: warning: symbol '_pg_txpwr_src_str' was not declared. Should it be static?
+hal/hal_com_phycfg.c: warning: symbol 'pg_txpwr_def_info' was not declared. Should it be static?
+hal/hal_dm.c: warning: Using plain integer as NULL pointer
+hal/hal_dm.c: warning: cast from non-scalar
+hal/hal_dm.c: warning: cast to non-scalar
+hal/hal_intf.c: warning: Using plain integer as NULL pointer
+hal/hal_intf.c: warning: cast from non-scalar
+hal/hal_intf.c: warning: cast to non-scalar
+hal/phydm/halrf/halrf.c: warning: switch with no cases
+hal/phydm/halrf/halrf_debug.c: warning: switch with no cases
+hal/phydm/halrf/halrf_debug.c: warning: symbol 'halrf_cmd_ary' was not declared. Should it be static?
+hal/phydm/phydm_debug.c: warning: Using plain integer as NULL pointer
+hal/phydm/phydm_debug.c: warning: symbol 'phy_dm_ary' was not declared. Should it be static?
+hal/phydm/phydm_math_lib.c: warning: symbol 'db_invert_table' was not declared. Should it be static?
+hal/phydm/phydm_psd.c: warning: symbol 'psd_result_cali_tone_8821' was not declared. Should it be static?
+hal/phydm/phydm_psd.c: warning: symbol 'psd_result_cali_val_8821' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_bb.c: warning: symbol 'array_mp_8192e_agc_tab' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_bb.c: warning: symbol 'array_mp_8192e_phy_reg' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_bb.c: warning: symbol 'array_mp_8192e_phy_reg_pg' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_mac.c: warning: symbol 'array_mp_8192e_mac_reg' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'array_mp_8192e_radioa' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'array_mp_8192e_radiob' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'array_mp_8192e_txpwr_lmt' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'array_mp_8192e_txpwr_lmt_8192e_sar_5mm' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2g_cck_a_n_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2g_cck_a_p_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2g_cck_b_n_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2g_cck_b_p_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2ga_n_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2ga_p_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2gb_n_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_2gb_p_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_5ga_n_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_5ga_p_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_5gb_n_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/phydm/rtl8192e/halhwimg8192e_rf.c: warning: symbol 'g_delta_swing_table_idx_mp_5gb_p_txpowertrack_usb_8192e' was not declared. Should it be static?
+hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_length_mp_8192e_fw_nic' was not declared. Should it be static?
+hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_length_mp_8192e_fw_nic_setupbox' was not declared. Should it be static?
+hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_length_mp_8192e_fw_wowlan' was not declared. Should it be static?
+hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_mp_8192e_fw_nic' was not declared. Should it be static?
+hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_mp_8192e_fw_nic_setupbox' was not declared. Should it be static?
+hal/rtl8192e/hal8192e_fw.c: warning: symbol 'array_mp_8192e_fw_wowlan' was not declared. Should it be static?
+hal/rtl8192e/rtl8192e_cmd.c: warning: cast to restricted __le16
+hal/rtl8192e/rtl8192e_cmd.c: warning: cast truncates bits from constant value (ffffff00 becomes 0)
+hal/rtl8192e/rtl8192e_cmd.c: warning: cast truncates bits from constant value (ffffff0f becomes f)
+hal/rtl8192e/rtl8192e_dm.c: warning: cast from non-scalar
+hal/rtl8192e/rtl8192e_dm.c: warning: cast to non-scalar
+hal/rtl8192e/rtl8192e_hal_init.c: warning: Using plain integer as NULL pointer
+hal/rtl8192e/rtl8192e_hal_init.c: warning: cast to restricted __le16
+hal/rtl8192e/rtl8192e_hal_init.c: warning: cast to restricted __le32
+hal/rtl8192e/rtl8192e_rxdesc.c: warning: cast to restricted __le32
+hal/rtl8192e/rtl8192e_xmit.c: warning: cast to restricted __le16
+hal/rtl8192e/rtl8192e_xmit.c: warning: cast to restricted __le32
+hal/rtl8192e/rtl8192e_xmit.c: warning: incorrect type in assignment (different base types)
+hal/rtl8192e/usb/rtl8192eu_xmit.c: warning: cast to restricted __le32
+hal/rtl8192e/usb/rtl8192eu_xmit.c: warning: incorrect type in assignment (different base types)
+hal/rtl8192e/usb/rtl8192eu_xmit.c: warning: too many warnings
+hal/rtl8192e/usb/usb_halinit.c: warning: cast to restricted __le16
+include/rtw_mlme_ext.h: warning: symbol 'wlancmds' was not declared. Should it be static?
 include/uapi/linux/if_pppox.h: warning: array of flexible structures
+include/wifi.h: warning: cast to restricted __le16
+os_dep/linux/ioctl_cfg80211.c: warning: Using plain integer as NULL pointer
+os_dep/linux/ioctl_cfg80211.c: warning: cast to restricted __le16
+os_dep/linux/ioctl_cfg80211.c: warning: cast to restricted __le64
+os_dep/linux/ioctl_cfg80211.c: warning: cast truncates bits from constant value (ffff000f becomes f)
+os_dep/linux/ioctl_cfg80211.c: warning: incorrect type in assignment (different base types)
+os_dep/linux/ioctl_cfg80211.c: warning: invalid assignment: &=
+os_dep/linux/ioctl_cfg80211.c: warning: invalid assignment: |=
+os_dep/linux/ioctl_cfg80211.c: warning: restricted __le16 degrades to integer
+os_dep/linux/ioctl_cfg80211.c: warning: symbol '_nl80211_mesh_power_mode_str' was not declared. Should it be static?
+os_dep/linux/ioctl_cfg80211.c: warning: symbol '_nl80211_plink_actions_str' was not declared. Should it be static?
+os_dep/linux/ioctl_cfg80211.c: warning: symbol '_nl80211_plink_state_str' was not declared. Should it be static?
+os_dep/linux/ioctl_cfg80211.c: warning: symbol '_nl80211_sta_flags_str' was not declared. Should it be static?
+os_dep/linux/ioctl_linux.c: warning: Using plain integer as NULL pointer
+os_dep/linux/ioctl_linux.c: warning: cast removes address space '__user' of expression
+os_dep/linux/ioctl_linux.c: warning: cast to restricted __le16
+os_dep/linux/ioctl_linux.c: warning: incorrect type in argument 1 (different address spaces)
+os_dep/linux/ioctl_linux.c: warning: incorrect type in assignment (different base types)
+os_dep/linux/ioctl_linux.c: warning: symbol 'rtw_rates' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: Using plain integer as NULL pointer
+os_dep/linux/os_intfs.c: warning: symbol 'if2name' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'ifname' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_AcceptAddbaReq' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_FileMaskEfuse' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_GLNA_type' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_OffEfuseMask' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_RFE_type' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_TxBBSwing_2G' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_TxBBSwing_5G' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_ack_policy' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_acm_method' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_adaptivity_en' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_adaptivity_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_adaptivity_th_edcca_hl_diff' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_adaptivity_th_l2h_ini' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_ampdu_enable' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_amplifier_type_2g' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_amplifier_type_5g' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_amsdu_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_antdiv_cfg' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_antdiv_type' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_ap_fwd_b2u_flags' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_ap_src_b2u_flags' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_beamform_cap' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_bfee_rf_number' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_bfer_rf_number' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_bmc_tx_rate' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_busy_thresh' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_bw_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_channel' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_channel_plan' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_check_fw_ps' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_check_hw_status' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_chip_version' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_country_code' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_country_unspecified' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_drv_ant_band_switch' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_dynamic_agg_enable' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_enusbss' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_frag_thresh' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_full_ch_in_p2p_handshake' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_hiq_filter' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_ht_enable' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_hw_wps_pbc' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_hwpdn_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_hwpwrp_detect' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_initmac' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_ips_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_lbkmode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_ldpc_cap' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_long_retry_lmt' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_low_power' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_lps_chk_by_tp' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_lps_level' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_max_bss_cnt' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_max_roaming_times' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_mp_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_network_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_notch_filter' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_pci_aspm_enable' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_pci_dynamic_aspm_linkctrl' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_power_mgnt' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_powertracking_type' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_preamble' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_pwrtrim_enable' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_qos_opt_enable' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_quick_addba_req' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_radio_enable' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_rfintfs' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_rts_thresh' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_rx_ampdu_amsdu' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_rx_nss' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_rx_path_lmt' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_rx_stbc' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_rxgain_offset_2g' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_rxgain_offset_5gl' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_scan_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_short_gi' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_short_retry_lmt' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_single_ant_path' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_smart_ps' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_software_decrypt' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_software_encrypt' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_stbc_cap' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_switch_usb_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_trx_path_bmp' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_aclt_flags' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_ampdu_amsdu' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_bw_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_nss' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_tx_path_lmt' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_usb_rxagg_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_vcs_type' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_vrtl_carrier_sense' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_wifi_spec' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_wireless_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_wmm_enable' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: symbol 'rtw_wowlan_sta_mix_mode' was not declared. Should it be static?
+os_dep/linux/os_intfs.c: warning: too many warnings
+os_dep/linux/recv_linux.c: warning: incorrect type in assignment (different base types)
+os_dep/linux/rtw_android.c: warning: incorrect type in argument 1 (different address spaces)
+os_dep/linux/rtw_android.c: warning: incorrect type in argument 2 (different address spaces)
+os_dep/linux/rtw_android.c: warning: incorrect type in assignment (different address spaces)
+os_dep/linux/rtw_android.c: warning: symbol 'android_wifi_cmd_str' was not declared. Should it be static?
+os_dep/linux/rtw_android.c: warning: symbol 'oob_gpio' was not declared. Should it be static?
+os_dep/linux/rtw_android.c: warning: symbol 'oob_irq' was not declared. Should it be static?
+os_dep/linux/usb_intf.c: warning: Using plain integer as NULL pointer
+os_dep/linux/usb_intf.c: warning: symbol 'rtw_usb_id_len' was not declared. Should it be static?
+os_dep/linux/usb_intf.c: warning: symbol 'ui_pid' was not declared. Should it be static?
+os_dep/linux/usb_intf.c: warning: symbol 'usb_drv' was not declared. Should it be static?
+os_dep/linux/xmit_linux.c: warning: Using plain integer as NULL pointer
+os_dep/osdep_service.c: warning: cast to restricted __be16
+os_dep/osdep_service.c: warning: cast to restricted __be32
+os_dep/osdep_service.c: warning: context imbalance in '_rtw_spinlock' - wrong count at exit
+os_dep/osdep_service.c: warning: context imbalance in '_rtw_spinlock_ex' - wrong count at exit
+os_dep/osdep_service.c: warning: context imbalance in '_rtw_spinunlock' - unexpected unlock
+os_dep/osdep_service.c: warning: context imbalance in '_rtw_spinunlock_ex' - unexpected unlock
 ## smatch
-driver/core/monitor/rtw_radiotap.c: warn: iterator 'i' not incremented
-driver/core/rtw_ap.c: warn: inconsistent indenting
-driver/core/rtw_ap.c: warn: odd binop '0x1c & 0x0'
-driver/core/rtw_br_ext.c: error: __builtin_memcpy() 'tag->tag_data[2][(6)]' too small (28 vs u16max)
-driver/core/rtw_cmd.c: warn: duplicate check 'pcmd' (previous on line 1018)
-driver/core/rtw_cmd.c: warn: inconsistent indenting
-driver/core/rtw_mlme.c: warn: bitwise AND condition is false here
-driver/core/rtw_mlme.c: warn: inconsistent indenting
-driver/core/rtw_mlme.c: warn: odd binop '0x0 & 0x2'
-driver/core/rtw_mlme.c: warn: odd binop '0x1c & 0x0'
-driver/core/rtw_mlme_ext.c: error: uninitialized symbol 'BA_starting_seqctrl'.
-driver/core/rtw_mlme_ext.c: warn: if statement not indented
-driver/core/rtw_mlme_ext.c: warn: inconsistent indenting
-driver/core/rtw_recv.c: error: we previously assumed 'rframe->u.hdr.psta' could be null (see line 2893)
-driver/core/rtw_recv.c: warn: if statement not indented
-driver/core/rtw_recv.c: warn: inconsistent indenting
-driver/core/rtw_rf.c: warn: call of 'snprintf' with non-constant format argument
-driver/core/rtw_rf.c: warn: duplicate check 'lmt_idx' (previous on line 1553)
-driver/core/rtw_wlan_util.c: warn: inconsistent indenting
-driver/core/rtw_xmit.c: warn: duplicate check 'psta' (previous on line 2161)
-driver/core/rtw_xmit.c: warn: inconsistent indenting
-driver/hal/hal_com.c: warn: inconsistent indenting
-driver/hal/hal_com.c: warn: iterator 'i' not incremented
-driver/hal/hal_com_phycfg.c: warn: duplicate check 'Band' (previous on line 1434)
-driver/hal/hal_dm.c: warn: if statement not indented
-driver/hal/hal_dm.c: warn: inconsistent indenting
-driver/hal/hal_intf.c: warn: inconsistent indenting
-driver/hal/phydm/halrf/halrf.c: warn: function puts 1693 bytes on stack
-driver/hal/phydm/halrf/halrf.c: warn: inconsistent indenting
-driver/hal/phydm/halrf/halrf.c: warn: maybe use && instead of &
-driver/hal/phydm/halrf/rtl8192e/halrf_8192e_ce.c: warn: iterator 'i' not incremented
-driver/hal/phydm/phydm_ccx.c: warn: iterator 'i' not incremented
-driver/hal/phydm/phydm_cfotracking.c: warn: impossible condition '(crystal_cap > 127) => ((-128)-127 > 127)'
-driver/hal/phydm/phydm_debug.c: error: strcpy() 'token' too large for 'argv[argc]' (17 vs 16)
-driver/hal/phydm/phydm_debug.c: warn: 'evm_tone_0' puts 1024 bytes on stack
-driver/hal/phydm/phydm_debug.c: warn: 'evm_tone_1' puts 1024 bytes on stack
-driver/hal/phydm/phydm_debug.c: warn: iterator 'i' not incremented
-driver/hal/phydm/phydm_dig.c: warn: inconsistent indenting
-driver/hal/phydm/phydm_dig.c: warn: iterator 'i' not incremented
-driver/hal/phydm/phydm_math_lib.c: error: buffer overflow 'db_invert_table[i]' 8 <= 8 (assuming for loop doesn't break)
-driver/hal/phydm/phydm_phystatus.c: warn: inconsistent indenting
-driver/hal/phydm/phydm_phystatus.c: warn: iterator 'i' not incremented
-driver/hal/phydm/phydm_psd.c: warn: inconsistent indenting
-driver/hal/phydm/phydm_rainfo.c: warn: iterator 'i' not incremented
-driver/hal/rtl8192e/rtl8192e_hal_init.c: warn: inconsistent indenting
-driver/os_dep/linux/ioctl_cfg80211.c: error: we previously assumed 'scanned' could be null (see line 1042)
-driver/os_dep/linux/ioctl_cfg80211.c: warn: inconsistent indenting
-driver/os_dep/linux/ioctl_cfg80211.c: warn: passing zero to 'ERR_PTR'
-driver/os_dep/linux/ioctl_linux.c: warn: inconsistent indenting
-driver/os_dep/linux/os_intfs.c: error: we previously assumed 'wdev' could be null (see line 2042)
-driver/os_dep/linux/os_intfs.c: warn: inconsistent indenting
-driver/os_dep/linux/usb_intf.c: warn: can 'usb_intf' even be NULL?
-driver/os_dep/linux/usb_ops_linux.c: warn: inconsistent indenting
-driver/os_dep/osdep_service.c: warn: passing zero to 'PTR_ERR'
+core/monitor/rtw_radiotap.c: warn: iterator 'i' not incremented
+core/rtw_ap.c: warn: inconsistent indenting
+core/rtw_ap.c: warn: odd binop '0x1c & 0x0'
+core/rtw_br_ext.c: error: __builtin_memcpy() 'tag->tag_data[2][(6)]' too small (28 vs u16max)
+core/rtw_cmd.c: warn: duplicate check 'pcmd' (previous on line 1018)
+core/rtw_cmd.c: warn: inconsistent indenting
+core/rtw_mlme.c: warn: bitwise AND condition is false here
+core/rtw_mlme.c: warn: inconsistent indenting
+core/rtw_mlme.c: warn: odd binop '0x0 & 0x2'
+core/rtw_mlme.c: warn: odd binop '0x1c & 0x0'
+core/rtw_mlme_ext.c: error: uninitialized symbol 'BA_starting_seqctrl'.
+core/rtw_mlme_ext.c: warn: if statement not indented
+core/rtw_mlme_ext.c: warn: inconsistent indenting
+core/rtw_recv.c: error: we previously assumed 'rframe->u.hdr.psta' could be null (see line 2893)
+core/rtw_recv.c: warn: if statement not indented
+core/rtw_recv.c: warn: inconsistent indenting
+core/rtw_rf.c: warn: call of 'snprintf' with non-constant format argument
+core/rtw_rf.c: warn: duplicate check 'lmt_idx' (previous on line 1553)
+core/rtw_wlan_util.c: warn: inconsistent indenting
+core/rtw_xmit.c: warn: duplicate check 'psta' (previous on line 2161)
+core/rtw_xmit.c: warn: inconsistent indenting
+hal/hal_com.c: warn: inconsistent indenting
+hal/hal_com.c: warn: iterator 'i' not incremented
+hal/hal_com_phycfg.c: warn: duplicate check 'Band' (previous on line 1434)
+hal/hal_dm.c: warn: if statement not indented
+hal/hal_dm.c: warn: inconsistent indenting
+hal/hal_intf.c: warn: inconsistent indenting
+hal/phydm/halrf/halrf.c: warn: function puts 1693 bytes on stack
+hal/phydm/halrf/halrf.c: warn: inconsistent indenting
+hal/phydm/halrf/halrf.c: warn: maybe use && instead of &
+hal/phydm/halrf/rtl8192e/halrf_8192e_ce.c: warn: iterator 'i' not incremented
+hal/phydm/phydm_ccx.c: warn: iterator 'i' not incremented
+hal/phydm/phydm_cfotracking.c: warn: impossible condition '(crystal_cap > 127) => ((-128)-127 > 127)'
+hal/phydm/phydm_debug.c: error: strcpy() 'token' too large for 'argv[argc]' (17 vs 16)
+hal/phydm/phydm_debug.c: warn: 'evm_tone_0' puts 1024 bytes on stack
+hal/phydm/phydm_debug.c: warn: 'evm_tone_1' puts 1024 bytes on stack
+hal/phydm/phydm_debug.c: warn: iterator 'i' not incremented
+hal/phydm/phydm_dig.c: warn: inconsistent indenting
+hal/phydm/phydm_dig.c: warn: iterator 'i' not incremented
+hal/phydm/phydm_math_lib.c: error: buffer overflow 'db_invert_table[i]' 8 <= 8 (assuming for loop doesn't break)
+hal/phydm/phydm_phystatus.c: warn: inconsistent indenting
+hal/phydm/phydm_phystatus.c: warn: iterator 'i' not incremented
+hal/phydm/phydm_psd.c: warn: inconsistent indenting
+hal/phydm/phydm_rainfo.c: warn: iterator 'i' not incremented
+hal/rtl8192e/rtl8192e_hal_init.c: warn: inconsistent indenting
+os_dep/linux/ioctl_cfg80211.c: error: we previously assumed 'scanned' could be null (see line 1042)
+os_dep/linux/ioctl_cfg80211.c: warn: inconsistent indenting
+os_dep/linux/ioctl_cfg80211.c: warn: passing zero to 'ERR_PTR'
+os_dep/linux/ioctl_linux.c: warn: inconsistent indenting
+os_dep/linux/os_intfs.c: error: we previously assumed 'wdev' could be null (see line 2042)
+os_dep/linux/os_intfs.c: warn: inconsistent indenting
+os_dep/linux/usb_intf.c: warn: can 'usb_intf' even be NULL?
+os_dep/linux/usb_ops_linux.c: warn: inconsistent indenting
+os_dep/osdep_service.c: warn: passing zero to 'PTR_ERR'
 ## checkpatch
 8192eu.mod.c: WARNING: Missing or malformed SPDX-License-Identifier tag in line 1
 8192eu.mod.c: WARNING: break quoted strings at a space character
