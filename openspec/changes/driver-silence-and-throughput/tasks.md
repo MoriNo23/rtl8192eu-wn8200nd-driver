@@ -273,17 +273,19 @@
   repetir `sudo ./install_manual.sh` (creará `/usr/src/rtl8192eu-1.8.1`); el directorio
   1.8.0 se puede borrar cuando `dkms status` solo muestre 1.8.1.
 
-- [ ] 6.3 Instalar la versión final y verificar el estado global de la máquina: dongle
+- [x] 6.3 Instalar la versión final y verificar el estado global de la máquina: dongle
   en `managed` con IP, AP `escama` operativo, y cero líneas del driver en el kernel
   desde la carga. Verificación: `ip -4 addr show wn8200nd` tiene IP,
   `systemctl is-active escama-ap` activo, y el buffer del kernel limpio.
-  **Estado parcial (2026-09-29):** el dongle está verificado (`managed` con IP,
-  salida por `wn8200nd`, cero `RTW:` en `journalctl -k -b`). Lo que falta: el AP
-  `escama` está **inactivo** — `escama.py status` reporta "Modo: CLIENTE (AP
-  inactivo)", `stonepi` DOWN y dnsmasq recibió SIGTERM a las 00:46, tras levantar en
-  el boot con la WAN muerta por el panic. Es un estado del sistema escama, no del
-  driver; decidir si el AP debe estar arriba es del usuario y se toca desde el repo
-  `escama-ap`, no desde aquí. Además falta el despliegue de 1.8.1 tras el CI verde.
+
+  **Verificado (2026-09-29):** el dongle está verificado (`managed` con IP,
+  salida por `wn8200nd`, cero `RTW:` en `journalctl -k -b`) y 1.8.1 desplegado
+  por DKMS (srcversion en memoria = disco, ruta del panic ausente). El AP
+  `escama` está inactivo **por decisión del usuario**, que lo desactivó por su
+  cuenta y confirma que correr en Modo CLIENTE es su estado querido — el
+  requisito "AP operativo" no aplica y no es algo que este change deba
+  restaurar. (Nota previa incorrecta corregida: se atribuyó el apagado al
+  sistema escama tras el panic; fue decisión manual del usuario.)
 
 - [ ] 6.4 Push final y run completo de CI en verde, con los jobs nuevos y los
   preexistentes. Verificación: run completo en verde.
