@@ -13,6 +13,13 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: >-
+          Regenera el baseline de analisis estatico y lo sube como artefacto
+          (hay que descargarlo y commitearlo). El job no falla en este modo.
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -279,6 +286,7 @@ jobs:
           ls -la "$RUNNER_TEMP/lksrc/scripts/checkpatch.pl"
 
       - name: El baseline existe y no esta vacio
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.update_baseline) }}
         # Comprobacion explicita y visible: si el baseline desaparece, el job
         # tiene que fallar aqui, no pasar en silencio.
         run: |
@@ -294,13 +302,38 @@ jobs:
             echo "OK: baseline incluye $t"
           done
 
+      - name: "Generar el baseline (dispatch con update_baseline)"
+        # El baseline tiene que generarse con el MISMO toolchain que ejecuta el
+        # job. Generado en otro sitio no casa: entre el contenedor de desarrollo
+        # y el runner hay diferencias de version de headers y de locale que
+        # cambian como se escriben los mensajes (gcc entrecomar identificadores
+        # con comillas ASCII en locale C y con comillas tipograficas en UTF-8), y
+        # entonces hallazgos identicos aparecen como nuevos. Por eso se genera
+        # AQUI, y luego se descarga y se commitea.
+        #
+        # Solo con dispatch: un push normal nunca lo regenera, porque eso dejaria
+        # pasar regresiones en silencio.
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_baseline }}
+        run: ci/static-analysis.sh --all --update-baseline
+
+      - name: "Subir el baseline regenerado"
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_baseline }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-baseline
+          path: ci/static-analysis-baseline.txt
+          if-no-files-found: error
+          retention-days: 30
+
       - name: "Generar o verificar las tres herramientas"
         # --all: una sola pasada. No es estetico, es rendimiento: checkpatch
         # sobre driver/ tarda ~13 min porque recorre 591 ficheros uno a uno, y
-        # hacerlos por separado seria repetir ese trabajo tres veces.
+        # hacerlos por separado seria repetir ese trabajo tres veces. En modo
+        # regeneracion ya se ha ejecutado arriba, asi que aqui se salta.
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.update_baseline) }}
         run: ci/static-analysis.sh --all
-
       - name: "Resumen por herramienta"
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.update_baseline) }}
         run: |
           for t in sparse smatch checkpatch; do
             n=$(awk -v tool="$t" '/^## /{i=($2==tool);next} /^#/{next} i' \
