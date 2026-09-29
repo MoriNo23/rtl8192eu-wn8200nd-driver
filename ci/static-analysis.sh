@@ -312,6 +312,15 @@ normalize() {
             if (line ~ /^\/lib\/modules\//) next
             if (line ~ /^\/usr\/local\//)  next
 
+            # Las comillas tipograficas se pasan a ASCII. gcc las usa para
+            # entrecomar identificadores, y CADA LOCALE USA DISTINTAS: en locale
+            # C emite 'strcmp' y en uno UTF-8 emite 'strcmp'. Como el baseline se
+            # genero en un contenedor con locale C y el job corre en el runner
+            # con UTF-8, los mismos hallazgos aparecian como distintos y el
+            # baseline no era portable entre entornos.
+            gsub(/\342\200\234|\342\200\235/, "\042", line)
+            gsub(/\342\200\230|\342\200\231/, "\047", line)
+
             sep = index(line, ": ")
             if (sep == 0) next
             path = norm_path(substr(line, 1, sep - 1))
