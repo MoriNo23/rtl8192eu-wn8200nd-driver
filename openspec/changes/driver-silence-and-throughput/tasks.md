@@ -189,6 +189,10 @@
   antes de instalar), que no anuncia country IE, y el dominio lo manda la red. No
   se puede "arreglar" sin violar el invariante. En 2.4 GHz el efecto práctico es
   nulo (mismo techo de 20 dBm).
+  **Confirmación posterior (2026-09-29):** al volver a la red habitual
+  (`NAVI-CD91C4`), `iw reg get` muestra de nuevo `country US: DFS-FCC`. El `00`
+  era exclusivo de maritza. El dominio sigue a la red, exactamente como manda el
+  invariante — ni se rompió al instalar ni había que "arreglarlo".
 
 - [ ] 4.5 Medir el A/B de TX power: con `auto` (13 dBm HT), contra un valor fijo
   intermedio de 15-16 dBm, y contra el 20 dBm que había. Registrar la tasa
@@ -226,12 +230,19 @@
   módulo instalado; CI verde; módulo cargando limpio con la etiqueta `next:`
   restaurada. La cifra de throughput sostenido es la 5.3, que queda abierta.
 
-- [ ] 5.3 Medir el efecto de GRO en descarga sostenida y en CPU, y registrar el
+- [x] 5.3 Medir el efecto de GRO en descarga sostenida y en CPU, y registrar el
   resultado. Verificación: cifras de antes y después en `docs/`.
   **Nota:** exige hardware real. Lo que la VM **sí** verifica de GRO (y es la
   mitad del riesgo): que el módulo carga y se descarga limpiamente con
   `CONFIG_RTW_GRO=y`, y que la etiqueta `next:` de `napi_recv()` enlaza. Eso es la
   7.2. La cifra de throughput es de la máquina.
+
+  **Verificado (2026-09-29):** en la misma red del baseline (`NAVI-CD91C4`,
+  -50..-57 dBm, HT20), 3 corridas de 50 MB vía speed.cloudflare.com:
+  **25.1 / 26.8 / 25.2 Mbps con ~12% de CPU busy**, contra los **13.0 Mbps** del
+  "antes" del proposal (misma red, -58 dBm). 0% de pérdida y RTT 2.5 ms al
+  gateway tras las corridas; tasas negociadas sin colapsar. Videollamada
+  "good" (usuario). Cifras, método y limitaciones en `docs/THROUGHPUT.md`.
 
 - [x] 5.4 Activar NAPI: `rtw_en_napi = 1` en `/etc/modprobe.d/8192eu.conf`. Verificación:
   CI en verde; la entrega de tramas deja de ser por trama.
