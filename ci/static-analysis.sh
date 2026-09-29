@@ -268,17 +268,57 @@ extract_findings() {
 # donde el path sale relativo ("include/wifi.h"). Sin esta normalizacion, el
 # baseline generado en un sitio no casa nunca con la ejecucion en el otro, y el
 # job reporta como "nuevos" hallazgos que ya estaban.
+# Todo en awk y no encadenando sed: los prefijos de ruta se quitan con
+# substr(), que compara LITERALMENTE. Con sed, 's|^\./||' es una expresion
+# regular donde el punto es metacaracter, y 's|^driver/||' funciona por
+# casualidad (no hay metacaráacteres) pero no es legible ni seguro.
+#
+# En el runner, ademas, las rutas llegan en tres formas distintas segun la
+# herramienta y segun como el kernel las pasa: absolutas con el prefijo del
+# checkout, relativas con "./" y relativas sin nada. Reducirlas todas a la
+# relativa dentro de driver/ es lo que hace comparables un baseline generado en
+# local con una ejecucion en el CI.
+# Todo en awk y no encadenando sed: los prefijos de ruta se quitan con
+# substr(), que compara LITERALMENTE. Con sed, 's|^\./||' es una expresion
+# regular donde el punto es metacaracter, y el resto de reglas dependen de
+# metacaracteres que se escapan de forma fragil.
+#
+# En el runner las rutas llegan en tres formas segun la herramienta y segun como
+# el kernel las pasa: absolutas con el prefijo del checkout, relativas con "./" y
+# relativas sin nada. Reducirlas todas a la relativa dentro de driver/ es lo que
+# hace comparables un baseline generado en local con una ejecucion en el CI.
+#
+# El separador ": " (dos puntos ESPACIO) es el mismo que usan las tres
+# herramientas entre la posicion y el mensaje, y no aparece dentro de una ruta.
 normalize() {
-    sed -e "s|^$REPO_ROOT/||" -e 's|^\./||' -e 's|^driver/||' \
-    | awk '
-        # cabeceras del kernel y del sistema, en cualquier version
-        /^\/usr\/src\//     { next }
-        /^\/usr\/include\// { next }
-        /^\/lib\/modules\// { next }
-        { print }
-    ' \
-    | grep -v '^[[:space:]]*$' \
-    | LC_ALL=C sort -u
+    awk -v repo="$REPO_ROOT" '
+        function norm_path(p,   q) {
+            q = p
+            if (index(q, repo "/") == 1) q = substr(q, length(repo) + 2)
+            if (index(q, "driver/") == 1) q = substr(q, 8)
+            while (substr(q, 1, 2) == "./") q = substr(q, 3)
+            return q
+        }
+        {
+            line = $0
+            sub(/^[ \t]+/, "", line)
+            sub(/[ \t]+$/, "", line)
+            if (line == "") next
+            # Cabeceras del kernel y del sistema, en cualquier version: no son
+            # codigo de este repositorio y cambian con la version de headers
+            # del runner, asi que ahi un hallazgo no es una regresion nuestra.
+            if (line ~ /^\/usr\/src\//)     next
+            if (line ~ /^\/usr\/include\//) next
+            if (line ~ /^\/lib\/modules\//) next
+            if (line ~ /^\/usr\/local\//)  next
+
+            sep = index(line, ": ")
+            if (sep == 0) next
+            path = norm_path(substr(line, 1, sep - 1))
+            if (path == "") next
+            print path ": " substr(line, sep + 2)
+        }
+    ' | LC_ALL=C sort -u
 }
 
 # --- ejecucion y comparacion ---------------------------------------------
