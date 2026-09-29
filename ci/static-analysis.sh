@@ -7,11 +7,33 @@
 #
 #   sparse      Análisis de tipos (paquete `sparse` de la distro)
 #   smatch      Análisis de valores (smatch construido desde fuente)
-#   checkpatch  Estilo del kernel (checkpatch.pl del linux-source)
+#   checkpatch  Estilo del kernel (checkpatch.pl del linux-source).
+#               OPT-IN desde 2026-09-29: no corre en el push normal. Ver abajo.
+#
+#   --all       Las herramientas activas en una sola invocación (sparse + smatch).
 #
 #   --update-baseline  Escribe el recuento actual en el baseline en vez de
 #                       comparar. Es el ÚNICO modo en que el baseline cambia,
 #                       y por tanto la actualización es siempre explícita.
+#
+# POR QUE CHECKPATCH ES OPT-IN
+# Sobre driver/ produce 7.326 de los 8.080 hallazgos del baseline, y tarda ~13
+# min (recorre 591 ficheros uno a uno). Son avisos de ESTILO: "falta SPDX",
+# "parte cadenas en el espacio", "no abuses de los tipos". En un arbol de vendor
+# que no se va a reescribir, ninguno ha senalado jamas un fallo de kernel, y su
+# coste es el de mantener un baseline 8 veces mas grande que el resto junto. Se
+# conserva la herramienta y su seccion de baseline (nada se pierde: se puede
+# pedir explicitamente), pero sale del push normal.
+#
+# La regresion que esto SI puede perder: un memcpy mal escrito o un `u16` donde
+# tocaba `u32` los reporta sparse y smatch, que siguen activos. Lo que se pierde
+# es solo estilo, y en un driver de 2018 el estilo no puede ser una regresion
+# porque no va a cambiar.
+#
+# COMO SE PIDE
+#   En local:  ci/static-analysis.sh checkpatch
+#   En CI:     el job `static-analysis` lo corre solo si el workflow lo pide con
+#              la entrada workflow_dispatch `checkpatch=true`.
 #
 # CÓMO FUNCIONA EL BASELINE
 # El driver es un árbol de vendor: checkpatch sobre driver/ produce miles de
@@ -38,18 +60,21 @@ TOOL="${1:-}"
 UPDATE=0
 [ "${2:-}" = "--update-baseline" ] && UPDATE=1
 
-# --all: las tres herramientas en una sola invocacion. Existe por rendimiento,
-# no por comodidad: checkpatch sobre driver/ tarda ~13 min (591 ficheros, uno a
-# uno), asi que generar y verificar por separado son ~30 min de trabajo que se
-# repite. Con --all, cada herramienta se ejecuta UNA vez y de su salida salen
-# las tres secciones.
+# Herramientas que corren en el push normal. checkpatch queda fuera a proposito
+# (ver la cabecera): se pide con `ci/static-analysis.sh checkpatch`.
+ACTIVE_TOOLS="sparse smatch"
+
+# --all: las herramientas activas en una sola invocacion. Existe por
+# rendimiento, no por comodidad: cada herramienta se ejecuta UNA vez y de su
+# salida salen todas las secciones, en vez de repetir el build por herramienta.
+# Con checkpatch activo eran ~30 min; ahora son las dos que analizan de verdad.
 if [ "$TOOL" = "--all" ]; then
     # RAW_DIR se comparte entre las sub-invocaciones para poder inspeccionar la
-    # salida cruda de las tres herramientas cuando algo falle.
+    # salida cruda cuando algo falle.
     export RAW_DIR="${RAW_DIR:-$(mktemp -d)}"
     UPD=""
     [ "$UPDATE" -eq 1 ] && UPD="--update-baseline"
-    for t in sparse smatch checkpatch; do
+    for t in $ACTIVE_TOOLS; do
         "$0" "$t" $UPD || { echo "ERROR: fallo la herramienta $t" >&2; exit 1; }
     done
     exit 0

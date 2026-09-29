@@ -101,15 +101,52 @@ CONFIG_TXPWR_BY_RATE = y
 # enlace pequeno (el objetivo del efuse es 13 dBm HT), pero es la combinacion
 # correcta y evita el gasto de PA en MCS alto.
 CONFIG_TXPWR_BY_RATE_EN = y
-# [1.8.0] LIMITES CONTRA EL DOMINIO REGULATORIO.
-# Con 'n', lmt y ulmt salen NA en la tabla de potencias: el driver no calcula
-# ningun limite. Bajo US (2.4G a 30 dBm) NO recorta nada a 13 dBm, asi que no es
-# un arreglo de rendimiento: es una garantia. Sin esto, cualquier anulacion de
-# potencia futura se emitiria sin recortar, y el dominio regulatorio de cfg80211
-# gobierna que canales se pueden usar, NO el indice de potencia que escribe la
-# HAL. Ver design.md D4.
-CONFIG_TXPWR_LIMIT = y
-CONFIG_TXPWR_LIMIT_EN = y
+# [1.8.0, REVERTIDO 2026-09-28] CONFIG_TXPWR_LIMIT / _EN vuelven a 'n'.
+#
+# Motivo, medido en la maquina: con 'y' el driver entra en
+# rtw_txpwr_lmt_add_with_nlen() durante rtw_drv_entry() y revienta el kernel.
+#   WARNING at lib/string_helpers.c:1032 __fortify_report
+#   strlen: detected buffer overflow: 1 byte read of buffer size 0
+#   Oops: invalid opcode  (-> __fortify_panic, que es un panic intencionado)
+#   Tainted: G|U|O|E 6.12.107+deb13-amd64
+# Pila: rtw_txpwr_lmt_add_with_nlen -> rtw_txpwr_lmt_add -> phy_set_tx_power_limit
+#       -> odm_read_and_config_mp_8192e_txpwr_lmt -> odm_config_rf_with_header_file
+#       -> phy_load_tx_power_limit -> rtw_init_drv_sw -> rtw_drv_init -> rtw_drv_entry
+#
+# Que se rompe, con certeza: la RELECTURA del nombre. struct txpwr_lmt_ent
+# (hal_data.h:345) termina en `char regd_name[0]`, un array de TAMANO CERO (el
+# idioma pre-C99 de flexible array member), y el bucle de busqueda hace
+# `strlen(ent->regd_name)` sobre el (rtw_rf.c:1819), con `ent` sacado de
+# LIST_CONTAINOR. La reserva es CORRECTA (+ nlen + 1 y _rtw_zvmalloc hace
+# memset(0), asi que el NUL existe): no hay desbordamiento real. Pero GCC, que
+# no puede rastrear el puntero hasta el vmalloc, calcula el tamano del objeto
+# desde la DECLARACION: [0] = 0 bytes. FORTIFY lee "strlen sobre buffer de
+# tamano 0", llama a __fortify_panic y ese es un panic deliberado. Por eso el
+# rastro acaba en "invalid opcode": no es corrupcion, es FORTIFY parandose.
+#
+# Prueba del gemelo: rtw_regd_exc_add_with_nlen (rtw_rf.c:1418) hace la MISMA
+# reserva con la MISMA struct [0] y no revienta — porque nunca relee el array.
+# El fallo es la relectura, no la reserva.
+#
+# La primera llamada no revienta (lista vacia, bucle no ejecutado); revienta en
+# la segunda, cuando ya hay una entrada — y el module_init carga varios
+# dominios del RF header, asi que siempre llega a la segunda.
+#
+# Arreglo posible (HIPOTESIS, no verificado): declarar `char regd_name[]`
+# (FAM moderno) para que __builtin_object_size devuelva "desconocido" y
+# FORTIFY salte la comprobacion. NO activar este flag sin cerrar antes
+# BUG-TXPOWER-001 en docs/BUGS.md.
+#
+# Es un fallo de la ruta de codigo, no una cuestion de configuracion: la funcion
+# se compila solo con CONFIG_TXPWR_LIMIT. 'n' es el default de fabrica de esta
+# familia y el estado historico del arbol upstream. Ver docs/BUGS.md
+# (BUG-TXPOWER-001).
+#
+# CONSECUENCIA PARA EL CI: los 8 jobs dieron verde con 'y', incluido
+# vm-load-test, que carga el .ko de verdad en una VM. Ese banco tiene un falso
+# negativo sin explicar. No volver a confiar en el sin cerrar antes BUG-TXPOWER-001.
+CONFIG_TXPWR_LIMIT = n
+CONFIG_TXPWR_LIMIT_EN = n
 CONFIG_RTW_CHPLAN = 0x34
 CONFIG_RTW_ADAPTIVITY_EN = enable
 CONFIG_RTW_ADAPTIVITY_MODE = carrier_sense

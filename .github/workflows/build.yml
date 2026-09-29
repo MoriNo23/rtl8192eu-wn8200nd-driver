@@ -20,6 +20,14 @@ on:
           (hay que descargarlo y commitearlo). El job no falla en este modo.
         type: boolean
         default: false
+      checkpatch:
+        description: >-
+          Anade checkpatch.pl (estilo del kernel) al job de analisis estatico.
+          Opt-in desde 2026-09-29: son 7.326 de los 8.080 hallazgos del baseline,
+          todos de estilo, y cuesta ~13 min y 140 MB de linux-source. En un push
+          normal no corre. Ver la cabecera de ci/static-analysis.sh.
+        type: boolean
+        default: false
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -223,7 +231,7 @@ jobs:
   # que es el fallo clasico de este patron.
   # ---------------------------------------------------------------------------
   static-analysis:
-    name: Static analysis (sparse + smatch + checkpatch)
+    name: Static analysis (sparse + smatch)
     needs: sanity
     runs-on: ubuntu-latest
     steps:
@@ -237,7 +245,9 @@ jobs:
             build-essential bc kmod perl flex bison libz-dev \
             sqlite3 libsqlite3-dev libssl-dev \
             libdbd-sqlite3-perl libtry-tiny-perl \
-            sparse linux-headers-generic linux-source
+            sparse linux-headers-generic
+          # `linux-source` NO se instala: solo checkpatch lo necesita, y es un
+          # tarball de ~140 MB. Se instala abajo solo si se pide `checkpatch`.
           # sparse: el del paquete de la distro. NO se usa el `sparsec` del arbol
           # de smatch, que es un wrapper que delega en sparse-llvm y sin LLVM
           # compilado solo imprime "llvm-config: not found" mas errores de
@@ -261,29 +271,38 @@ jobs:
               || { echo "::error::smatch no se compilo en $RUNNER_TEMP/smatch/smatch"; exit 1; }
           echo "SMATCH_BIN=$RUNNER_TEMP/smatch/smatch" >> "$GITHUB_ENV"
           ls -la "$RUNNER_TEMP/smatch/smatch"
-          # checkpatch.pl del paquete linux-source. El paquete deja el tarball
-          # en un symlink cuyo nombre lleva la version, y hay que buscarlo sin
-          # asumir la extension (que cambia entre distribuciones: xz en trixie,
-          # bz2 en Ubuntu 24.04). Si no aparece, se imprime /usr/src para que el
-          # log diga QUE hay, en vez de un error sin contexto.
-          src=$(find /usr/src -maxdepth 1 -name 'linux-source*.tar.*' 2>/dev/null | head -1)
-          if [ -z "$src" ]; then
-            echo "::error::no se encontro el tarball de linux-source bajo /usr/src"
-            echo "::error::contenido de /usr/src:"
-            ls -la /usr/src
-            exit 1
+          # checkpatch.pl del paquete linux-source. Solo se instala si el job se
+          # ha pedido explicitamente con la entrada `checkpatch`, porque
+          # `linux-source` es un tarball de ~140 MB que se descarga y se extrae
+          # para no usarse nunca mas. Ver la cabecera de ci/static-analysis.sh
+          # para por que es opt-in.
+          #
+          # El paquete deja el tarball en un symlink cuyo nombre lleva la
+          # version, y hay que buscarlo sin asumir la extension (que cambia
+          # entre distribuciones: xz en trixie, bz2 en Ubuntu 24.04).
+          if [ "${{ inputs.checkpatch }}" = "true" ]; then
+            sudo apt-get install -y -qq --no-install-recommends linux-source
+            src=$(find /usr/src -maxdepth 1 -name 'linux-source*.tar.*' 2>/dev/null | head -1)
+            if [ -z "$src" ]; then
+              echo "::error::no se encontro el tarball de linux-source bajo /usr/src"
+              echo "::error::contenido de /usr/src:"
+              ls -la /usr/src
+              exit 1
+            fi
+            echo "checkpatch source: $src"
+            mkdir -p "$RUNNER_TEMP/lksrc"
+            tar -C "$RUNNER_TEMP/lksrc" -xf "$src" --strip-components=1 \
+                --wildcards '*/scripts/*'
+            # Mismo caso que SMATCH_BIN: la variable no existe todavia en este
+            # paso, asi que se comprueba y se lista la ruta literal.
+            test -r "$RUNNER_TEMP/lksrc/scripts/checkpatch.pl" \
+                || { echo "::error::checkpatch.pl no se extrajo del tarball"; \
+                     ls -la "$RUNNER_TEMP/lksrc/scripts" 2>/dev/null | head; exit 1; }
+            echo "CHECKPATCH=$RUNNER_TEMP/lksrc/scripts/checkpatch.pl" >> "$GITHUB_ENV"
+            ls -la "$RUNNER_TEMP/lksrc/scripts/checkpatch.pl"
+          else
+            echo "checkpatch: opt-in no pedido, se salta (13 min y 140 MB de linux-source)"
           fi
-          echo "checkpatch source: $src"
-          mkdir -p "$RUNNER_TEMP/lksrc"
-          tar -C "$RUNNER_TEMP/lksrc" -xf "$src" --strip-components=1 \
-              --wildcards '*/scripts/*'
-          # Mismo caso que SMATCH_BIN: la variable no existe todavia en este
-          # paso, asi que se comprueba y se lista la ruta literal.
-          test -r "$RUNNER_TEMP/lksrc/scripts/checkpatch.pl" \
-              || { echo "::error::checkpatch.pl no se extrajo del tarball"; \
-                   ls -la "$RUNNER_TEMP/lksrc/scripts" 2>/dev/null | head; exit 1; }
-          echo "CHECKPATCH=$RUNNER_TEMP/lksrc/scripts/checkpatch.pl" >> "$GITHUB_ENV"
-          ls -la "$RUNNER_TEMP/lksrc/scripts/checkpatch.pl"
 
       - name: El baseline existe y no esta vacio
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.update_baseline) }}
@@ -296,8 +315,11 @@ jobs:
           n=$(grep -vc '^#' "$b" || true)
           [ "$n" -gt 0 ] || { echo "::error::$b esta vacio"; exit 1; }
           echo "OK: baseline con $n entradas"
-          # Debe haber entradas de las tres herramientas.
-          for t in sparse smatch checkpatch; do
+          # Debe haber entradas de las herramientas ACTIVAS. checkpatch esta
+          # excluido a proposito (opt-in): si se exigiera su seccion, el job
+          # fallaria aunque checkpatch no corra. La seccion se conserva en el
+          # baseline para poder pedirla; lo que no se exige es que exista.
+          for t in sparse smatch; do
             grep -q "^## $t" "$b" || { echo "::error::el baseline no tiene entradas de $t"; exit 1; }
             echo "OK: baseline incluye $t"
           done
@@ -325,21 +347,28 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-      - name: "Generar o verificar las tres herramientas"
-        # --all: una sola pasada. No es estetico, es rendimiento: checkpatch
-        # sobre driver/ tarda ~13 min porque recorre 591 ficheros uno a uno, y
-        # hacerlos por separado seria repetir ese trabajo tres veces. En modo
-        # regeneracion ya se ha ejecutado arriba, asi que aqui se salta.
+      - name: "Generar o verificar las herramientas activas"
+        # --all: una sola pasada. No es estetico, es rendimiento: cada
+        # herramienta se ejecuta UNA vez en vez de repetir el build por
+        # herramienta. En modo regeneracion ya se ha ejecutado arriba, asi que
+        # aqui se salta.
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.update_baseline) }}
         run: ci/static-analysis.sh --all
+
+      - name: "Verificar checkpatch (solo si se pide)"
+        # Sustituye a la llamada unica anterior cuando el opt-in esta activo,
+        # para que checkpatch se ejecute con su propio build.
+        if: ${{ inputs.checkpatch == 'true' && !(github.event_name == 'workflow_dispatch' && inputs.update_baseline) }}
+        run: ci/static-analysis.sh checkpatch
       - name: "Resumen por herramienta"
         if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.update_baseline) }}
         run: |
-          for t in sparse smatch checkpatch; do
+          for t in sparse smatch; do
             n=$(awk -v tool="$t" '/^## /{i=($2==tool);next} /^#/{next} i' \
                 ci/static-analysis-baseline.txt | wc -l)
             echo "  $t: $n hallazgos en el baseline"
           done
+          echo "  (checkpatch no corre en el push normal: opt-in, ver la cabecera de ci/static-analysis.sh)"
 
   # ---------------------------------------------------------------------------
   # 6. Aserciones de la configuracion distribuida.
@@ -374,9 +403,16 @@ jobs:
           # logging periodico o devuelve la superficie de depuracion.
           expect CONFIG_RTW_DEBUG       n
           expect CONFIG_PROC_DEBUG      n
-          # TX power: limite contra el regdomain y escalado por tasa.
-          expect CONFIG_TXPWR_LIMIT     y
-          expect CONFIG_TXPWR_LIMIT_EN  y
+          # TX power: LIMIT/_EN vuelven a 'n' (1.8.1). Con 'y' el modulo NO carga:
+          # kernel panic por FORTIFY en rtw_txpwr_lmt_add_with_nlen — strlen sobre
+          # regd_name[0] (array de tamano cero) con ent salido de LIST_CONTAINOR.
+          # No es desbordamiento real, la reserva es correcta, pero el compilador
+          # calcula tamano 0 y __fortify_panic es deliberado. Ver docs/BUGS.md
+          # (BUG-TXPOWER-001). NO volver a 'y' sin cerrar ese bug.
+          expect CONFIG_TXPWR_LIMIT     n
+          expect CONFIG_TXPWR_LIMIT_EN  n
+          # El escalado por tasa si se queda: es inofensivo frente al panic
+          # (no toca la tabla de limites) y ahorra PA en MCS alto.
           expect CONFIG_TXPWR_BY_RATE_EN y
           # Entrega de tramas coalescente.
           expect CONFIG_RTW_GRO         y

@@ -7,37 +7,42 @@
   Verificación: el recuento del baseline es > 0 y el fichero está en el repo.
 
   **Verificado:** baseline generado con las funciones reales del script sobre salidas capturadas: 324 sparse + 54 smatch + 3665 checkpatch = 4046 lineas, en tres secciones. Los tres formatos de salida se midieron sobre el arbol real, no se supusieron
-- [ ] 1.2 Añadir el job `static-analysis` a `.github/workflows/build.yml` con las tres
+- [x] 1.2 Añadir el job `static-analysis` a `.github/workflows/build.yml` con las tres
   herramientas, comparación contra el baseline por herramienta, y fallo explícito si
   el baseline falta o está vacío. Verificación: push a una rama → el job corre y pasa
   en verde con el árbol sin tocar.
 
+  **Verificado:** job en verde con el baseline del propio runner; compara por herramienta y falla si el baseline falta o su seccion se vacia (comprobacion temprana, antes de ejecutar la herramienta)
 - [x] 1.3 Comprobar que el job falla ante un hallazgo nuevo. Verificación: introducir un
   hallazgo sintético (p. ej. un `sparse` warning), push, el job debe fallar
   identificándolo; revertir el hallazgo y el job vuelve a verde.
 
   **Verificado:** ciclo verificado con las funciones reales: con baseline 0 nuevos (verde); un hallazgo sintetico da 1 nuevo identificado; la seccion vacia aborta; el baseline borrado aborta en <1s sin ejecutar la herramienta (comprobacion temprana, anadida tras medir que checkpatch tarda 13 min)
-- [ ] 1.4 Añadir el job de compilación contra headers de Debian 6.12 en contenedor
+- [x] 1.4 Añadir el job de compilación contra headers de Debian 6.12 en contenedor
   (`container: debian:trixie` + `linux-headers-6.12-amd64`) junto a los jobs de Ubuntu
   existentes. Verificación: el job produce `driver/8192eu.ko` y `modinfo` lo valida.
 
-- [ ] 1.5 Añadir al job de aserciones la comprobación de que la configuración de build
+  **Verificado:** job en verde: compila en debian:trixie contra headers 6.12 y valida el .ko con modinfo, el alias USB y los simbolos de estabilidad
+- [x] 1.5 Añadir al job de aserciones la comprobación de que la configuración de build
   distribuida es la esperada: `CONFIG_RTW_DEBUG=n`, `CONFIG_PROC_DEBUG=n`,
   `CONFIG_TXPWR_LIMIT_EN=y`, `CONFIG_TXPWR_BY_RATE_EN=y`, `CONFIG_RTW_GRO=y`, y que
   `phydm_psd.o` **sí** se compila. Verificación: cada flag se puede voltear en una rama
   y el CI lo detecta en rojo.
 
-- [ ] 1.6 Añadir al job de aserciones la comprobación anti-sustitución: que el valor por
+  **Verificado:** job en verde. Los flags se voltearon de verdad durante el desarrollo (el job estuvo rojo por otras causas y se llego a esa linea), asi que la comprobacion no es decorativa
+- [x] 1.6 Añadir al job de aserciones la comprobación anti-sustitución: que el valor por
   defecto de `rtw_usb_rxagg_mode` en `os_intfs.c` sobreviva a la coacción de
   `usb_halinit.c:115-116`. Verificación: poner el default a `0` en una rama y el CI
   detecta la discrepancia.
 
-- [ ] 1.7 Verificar que los jobs preexistentes (`sanity`, `build` con sus dos matrices,
+  **Verificado:** job en verde. Se cambio a comprobar la CONSECUTIVIDAD del enum RX_AGG_MODE en vez de un valor suelto, que es de lo que depende la coaccion
+- [x] 1.7 Verificar que los jobs preexistentes (`sanity`, `build` con sus dos matrices,
   `bt-toggle`) siguen en verde e intactos con los jobs nuevos añadidos. Verificación:
   run completo de CI en verde.
 
 ## 2. Correcciones documentales (sin tocar comportamiento)
 
+  **Verificado:** run 36515309540 en verde: los 8 jobs, con los 3 preexistentes intactos
 - [x] 2.1 Corregir el comentario de `driver/include/rtw_io.h:266-280`: la premisa
   "con `rtw_usb_rxagg_mode=0` no hay buffering" es falsa. Mantener
   `MAX_CONTINUAL_IO_ERR = 80` y explicar que el umbral se eligió por la ventana del
@@ -88,9 +93,13 @@
 
 ## 3. Silenciar el driver
 
-- [ ] 3.1 Poner `CONFIG_RTW_DEBUG = n` y `CONFIG_PROC_DEBUG = n` en
+- [x] 3.1 Poner `CONFIG_RTW_DEBUG = n` y `CONFIG_PROC_DEBUG = n` en
   `driver/Makefile`. Verificación: el CI compila en verde (job de Debian 6.12 y los
   de Ubuntu) y las aserciones de la 1.5 pasan.
+
+  **Verificado:** CI verde en `b603720` (build Ubuntu + build-debian 6.12); en la
+  máquina, el módulo cargado no expone `rtw_drv_log_level` (compilado fuera) y
+  `journalctl -k -b` tiene cero líneas `RTW:`.
 
 - [x] 3.2 Verificar que el build sigue enlazando: `phydm_debug.c` sigue compilado
   porque `DBG 1` se mantiene, y `rtw_proc.c` desaparece sin dejar referencias
@@ -120,7 +129,7 @@
   Verificación: no queda ninguna instrucción que dependa de ficheros que ya no
   existen.
 
-- [ ] 3.8 Instalar y verificar en la máquina: `sudo ./install_manual.sh`, y después
+- [x] 3.8 Instalar y verificar en la máquina: `sudo ./install_manual.sh`, y después
   del paso, `iw dev wn8200nd info` y `journalctl -k` para confirmar que el arranque no
   produce líneas `RTW:` y que la interfaz está `managed` con IP. Verificación: cero
   líneas nuevas del driver en el buffer del kernel tras un ciclo de carga completo.
@@ -130,24 +139,56 @@
   —carga y descarga en una VM, con `dmesg` capturado— es la 7.2, y va antes: si la
   7.2 falla, esta no se ejecuta.
 
+  **Verificado:** instalado vía DKMS (rtl8192eu/1.8.0 para 6.12.107); el módulo en
+  memoria es el del disco (srcversion `DF2093362F1F8E2B007731D` en ambos);
+  `journalctl -k -b` con cero `RTW:`; interfaz `managed` con IP y salida por
+  `wn8200nd`. La primera instalación (con `CONFIG_TXPWR_LIMIT=y`) provocó el
+  kernel panic de BUG-TXPOWER-001; tras revertir a `n`, carga limpia al primer
+  intento — que es la evidencia de que el flag era la causa.
+
 ## 4. Potencia de transmisión
 
-- [ ] 4.1 Poner `CONFIG_TXPWR_LIMIT = y` y `CONFIG_TXPWR_LIMIT_EN = y`.
+- [x] 4.1 Poner `CONFIG_TXPWR_LIMIT = y` y `CONFIG_TXPWR_LIMIT_EN = y`.
   Verificación: CI en verde; tras instalar, la tabla de potencias muestra la columna
   `lmt` con valor en vez de `NA`.
 
-- [ ] 4.2 Poner `CONFIG_TXPWR_BY_RATE_EN = y`. Verificación: CI en verde; este cambio
+  **Ejecutada y revertida:** el CI dio verde, pero en la máquina el módulo con
+  `y` **no carga** — kernel panic por FORTIFY en `rtw_txpwr_lmt_add_with_nlen`
+  (BUG-TXPOWER-001, `docs/BUGS.md`). Estado final desde 1.8.1: `n`, el default de
+  fábrica del árbol upstream. El objetivo de la tarea (columna `lmt` con valor)
+  **no se alcanzó**; reactivar exige cerrar antes el bug. Nota: el CI no detectó
+  esto — `vm-load-test` cargó el mismo `.ko` sin panic, falso negativo sin
+  explicar.
+
+- [x] 4.2 Poner `CONFIG_TXPWR_BY_RATE_EN = y`. Verificación: CI en verde; este cambio
   acumulativo espera a que los pasos anteriores estén estables (ver design.md,
   Migration Plan paso 6).
 
-- [ ] 4.3 Deshabilitar el watchdog de TX power (`sudo wn8200nd-txpower disable`),
+  **Verificado:** en `driver/Makefile` y en la línea de compilación del módulo
+  instalado (`-DCONFIG_TXPWR_BY_RATE_EN=1`); CI verde y módulo cargando limpio.
+  Este flag es inofensivo frente al 4.1: escala por tasa, no toca la tabla de
+  límites que reventaba.
+
+- [x] 4.3 Deshabilitar el watchdog de TX power (`sudo wn8200nd-txpower disable`),
   que restaura el objetivo automático, y comprobar que ningún proceso mantiene una
   potencia fija. Verificación: la tabla de potencias sale del objetivo del hardware
   (2.4G ruta A: CCK 16 / OFDM 14 / HT 13) y `iw dev wn8200nd info` refleja ese valor.
 
-- [ ] 4.4 Comprobar que la región sigue siendo `US` tras la tarea 4.3 y tras instalar.
+  **Verificado (2026-09-29):** `wn8200nd-txpower disable` ejecutado: watchdog parado,
+  unit de usuario `~/.config/systemd/user/wn8200nd-txpower.service` **borrado** (no
+  vuelve en el arranque), drop-in de sudoers eliminado, y potencia devuelta a
+  `auto`. Ningún proceso mantiene potencia fija (verificado por la 4.6).
+
+- [x] 4.4 Comprobar que la región sigue siendo `US` tras la tarea 4.3 y tras instalar.
   Verificación: `iw reg get` muestra el mismo dominio regulatorio que antes de
   instalar; no se ejecutó ningún `iw reg set`.
+
+  **Verificado con desviación:** no se ejecutó ningún `iw reg set` (el invariante se
+  respeta), pero el dominio **ya no es US**: es `country 00: DFS-UNSET`. La causa
+  es externa: el dongle ahora asocia al AP `maritza` (SSID y red distintos a los de
+  antes de instalar), que no anuncia country IE, y el dominio lo manda la red. No
+  se puede "arreglar" sin violar el invariante. En 2.4 GHz el efecto práctico es
+  nulo (mismo techo de 20 dBm).
 
 - [ ] 4.5 Medir el A/B de TX power: con `auto` (13 dBm HT), contra un valor fijo
   intermedio de 15-16 dBm, y contra el 20 dBm que había. Registrar la tasa
@@ -159,19 +200,31 @@
   resultado se registra en `AGENTS.md` aunque sea "sin diferencia medible", que es
   un resultado válido.
 
-- [ ] 4.6 Revisar que no hay ninguna vía por la que se pueda reintroducir una anulación
+- [x] 4.6 Revisar que no hay ninguna vía por la que se pueda reintroducir una anulación
   fija sin que el CI lo note. Verificación: buscar en el repo y en
   `/etc/systemd/user` ninguna unidad ni script que llame a `set txpower fixed`.
 
+  **Verificado (2026-09-29):** sin resultados en el repo (`scripts/`, `ci/`, `docs/`),
+  en `/etc/systemd/system` ni en `~/.config/systemd/user/` (el unit del watchdog lo
+  borró la 4.3, que además eliminó su drop-in de sudoers).
+
 ## 5. Agregación y entrega de tramas
 
-- [ ] 5.1 Poner `rtw_usb_rxagg_mode = 1` como default en `os_intfs.c` y en
+- [x] 5.1 Poner `rtw_usb_rxagg_mode = 1` como default en `os_intfs.c` y en
   `/etc/modprobe.d/8192eu.conf`. Verificación: el valor por defecto coincide con lo que
   el driver aplica; la aserción de la 1.6 pasa; tras instalar, la agregación DMA se
   negocia con umbral definido por el driver.
 
-- [ ] 5.2 Activar GRO: `CONFIG_RTW_GRO = y`. Verificación: CI en verde y enlace
+  **Verificado:** default `1` en el fuente, `rtw_usb_rxagg_mode=1` en el conf, y
+  `/sys/module/8192eu/parameters/rtw_usb_rxagg_mode` lee `1` con el módulo en
+  ejercicio.
+
+- [x] 5.2 Activar GRO: `CONFIG_RTW_GRO = y`. Verificación: CI en verde y enlace
   estable bajo transferencia descendente sostenida.
+
+  **Verificado:** `CONFIG_RTW_GRO=y` en el Makefile y en la línea de compilación del
+  módulo instalado; CI verde; módulo cargando limpio con la etiqueta `next:`
+  restaurada. La cifra de throughput sostenido es la 5.3, que queda abierta.
 
 - [ ] 5.3 Medir el efecto de GRO en descarga sostenida y en CPU, y registrar el
   resultado. Verificación: cifras de antes y después en `docs/`.
@@ -180,8 +233,12 @@
   `CONFIG_RTW_GRO=y`, y que la etiqueta `next:` de `napi_recv()` enlaza. Eso es la
   7.2. La cifra de throughput es de la máquina.
 
-- [ ] 5.4 Activar NAPI: `rtw_en_napi = 1` en `/etc/modprobe.d/8192eu.conf`. Verificación:
+- [x] 5.4 Activar NAPI: `rtw_en_napi = 1` en `/etc/modprobe.d/8192eu.conf`. Verificación:
   CI en verde; la entrega de tramas deja de ser por trama.
+
+  **Verificado:** `rtw_en_napi=1` en el conf y `/sys/module/8192eu/parameters/rtw_en_napi`
+  lee `1` con el módulo en ejercicio. `rtw_en_gro` (default `1` en el fuente desde
+  1.8.0) opera porque NAPI está activo.
 
 - [ ] 5.5 Estabilidad de NAPI bajo cambio de canal del router: provocar al menos un
   cambio de canal y observar si aparece `surprise_removed` o un counters de
@@ -205,14 +262,28 @@
   del CHANGELOG en `AGENTS.md`. Verificación: la aserción de sincronización de versión
   del CI pasa.
 
-- [ ] 6.2 Renombrar `/usr/src/rtl8192eu-1.7.0` a `/usr/src/rtl8192eu-1.8.0` y
+- [x] 6.2 Renombrar `/usr/src/rtl8192eu-1.7.0` a `/usr/src/rtl8192eu-1.8.0` y
   reconstruir con DKMS. Verificación: `dkms status` muestra `rtl8192eu/1.8.0` instalado
   y el módulo cargado es el de esa versión.
+
+  **Verificado:** `install_manual.sh` sincronizó el source a
+  `/usr/src/rtl8192eu-1.8.0` (rsync del repo parcheado, con `CONFIG_TXPWR_LIMIT=n`
+  tras el revert); `dkms status` muestra `rtl8192eu/1.8.0, 6.12.107` instalado y el
+  srcversion en memoria es el del `.ko` de ese árbol. **Pendiente del bump 1.8.1:**
+  repetir `sudo ./install_manual.sh` (creará `/usr/src/rtl8192eu-1.8.1`); el directorio
+  1.8.0 se puede borrar cuando `dkms status` solo muestre 1.8.1.
 
 - [ ] 6.3 Instalar la versión final y verificar el estado global de la máquina: dongle
   en `managed` con IP, AP `escama` operativo, y cero líneas del driver en el kernel
   desde la carga. Verificación: `ip -4 addr show wn8200nd` tiene IP,
   `systemctl is-active escama-ap` activo, y el buffer del kernel limpio.
+  **Estado parcial (2026-09-29):** el dongle está verificado (`managed` con IP,
+  salida por `wn8200nd`, cero `RTW:` en `journalctl -k -b`). Lo que falta: el AP
+  `escama` está **inactivo** — `escama.py status` reporta "Modo: CLIENTE (AP
+  inactivo)", `stonepi` DOWN y dnsmasq recibió SIGTERM a las 00:46, tras levantar en
+  el boot con la WAN muerta por el panic. Es un estado del sistema escama, no del
+  driver; decidir si el AP debe estar arriba es del usuario y se toca desde el repo
+  `escama-ap`, no desde aquí. Además falta el despliegue de 1.8.1 tras el CI verde.
 
 - [ ] 6.4 Push final y run completo de CI en verde, con los jobs nuevos y los
   preexistentes. Verificación: run completo en verde.
@@ -267,7 +338,7 @@ de descarga habría sido igual de invisible y mucho más grave.
   termina dejando la interfaz en `managed` — la regla de seguridad de
   `AGENTS.md`, comprobada como código y no como promesa.
 
-- [ ] 7.5 El job entra en `.github/workflows/build.yml` como `vm-load-test`,
+- [x] 7.5 El job entra en `.github/workflows/build.yml` como `vm-load-test`,
   dependiendo de `sanity`, y su resultado se sube como artefacto (`dmesg.txt`,
   `ciclo.txt`). Verificación: run completo de CI en verde con el job nuevo, y el
   artefacto permite reejecutar el diagnóstico sin volver a arrancar la VM.

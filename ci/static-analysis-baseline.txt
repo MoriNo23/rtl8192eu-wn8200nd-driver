@@ -21,6 +21,17 @@
 # hallazgo con la forma "<ruta relativa dentro de driver/>: <mensaje>", sin
 # numero de linea (que se desplaza en cada commit) y con las comillas
 # normalizadas a ASCII (para que no dependa del locale).
+
+# CHECKPATCH ES OPT-IN (2026-09-29)
+# La seccion '## checkpatch' de abajo (7.329 hallazgos, todos de estilo: SPDX
+# ausente, comillas, indentacion) NO se verifica en el push normal: cuesta ~13 min
+# y 140 MB de linux-source, y en un arbol de vendor congelado el estilo no puede
+# regresar porque no va a cambiar. Se conserva en este fichero porque es el dato
+# contra el que compara el opt-in:
+#   gh workflow run build.yml --ref main -f checkpatch=true
+#   ci/static-analysis.sh checkpatch
+# Sin esta seccion el opt-in no tiene contra que comparar y falla.
+
 ## sparse
 arch/x86/include/asm/uaccess_64.h: warning: cast removes address space '__user' of expression
 core/efuse/rtw_efuse.c: warning: Using plain integer as NULL pointer
