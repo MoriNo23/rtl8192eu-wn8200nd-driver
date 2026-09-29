@@ -270,8 +270,13 @@ jobs:
           mkdir -p "$RUNNER_TEMP/lksrc"
           tar -C "$RUNNER_TEMP/lksrc" -xf "$src" --strip-components=1 \
               --wildcards '*/scripts/*'
+          # Mismo caso que SMATCH_BIN: la variable no existe todavia en este
+          # paso, asi que se comprueba y se lista la ruta literal.
+          test -r "$RUNNER_TEMP/lksrc/scripts/checkpatch.pl" \
+              || { echo "::error::checkpatch.pl no se extrajo del tarball"; \
+                   ls -la "$RUNNER_TEMP/lksrc/scripts" 2>/dev/null | head; exit 1; }
           echo "CHECKPATCH=$RUNNER_TEMP/lksrc/scripts/checkpatch.pl" >> "$GITHUB_ENV"
-          ls -la "$CHECKPATCH"
+          ls -la "$RUNNER_TEMP/lksrc/scripts/checkpatch.pl"
 
       - name: El baseline existe y no esta vacio
         # Comprobacion explicita y visible: si el baseline desaparece, el job
@@ -452,7 +457,14 @@ jobs:
           fi
           echo "OK: no hay directorio monitoring/"
           # Ningun script del repo debe recolectar telemetria del driver.
-          hits=$(grep -rln "rx_drop_monitor\|dig_fa_monitor\|odm/cmd" --include='*.sh' . || true)
+          #
+          # Se excluyen los ficheros de CI: el propio test que VERIFICA que no
+          # hay telemetría tiene que mencionar los términos que busca (menciona
+          # odm/cmd justamente para comprobar que el script de recarga no lo
+          # usa). Antes la asercion se quejaba de si misma, igual que la del
+          # dominio regulatorio.
+          hits=$(grep -rln "rx_drop_monitor\|dig_fa_monitor\|odm/cmd" \
+                 --include='*.sh' . 2>/dev/null | grep -v "^./ci/" || true)
           if [ -n "$hits" ]; then
             echo "::error::scripts que recolectan telemetria del driver:"; echo "$hits"; exit 1
           fi
@@ -654,7 +666,8 @@ jobs:
           set -e
           apt-get update -qq
           apt-get install -y -qq --no-install-recommends \
-            qemu-system-x86 cpio gzip busybox-static kmod bc \
+            build-essential make bc kmod \
+            qemu-system-x86 cpio gzip busybox-static \
             ca-certificates curl python3
           qemu-system-x86_64 --version | head -1
           base="http://deb.debian.org/debian"
