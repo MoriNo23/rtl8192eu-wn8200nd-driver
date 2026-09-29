@@ -194,7 +194,7 @@
   era exclusivo de maritza. El dominio sigue a la red, exactamente como manda el
   invariante — ni se rompió al instalar ni había que "arreglarlo".
 
-- [ ] 4.5 Medir el A/B de TX power: con `auto` (13 dBm HT), contra un valor fijo
+- [x] 4.5 Medir el A/B de TX power: con `auto` (13 dBm HT), contra un valor fijo
   intermedio de 15-16 dBm, y contra el 20 dBm que había. Registrar la tasa
   descendente sostenida en cada caso. Verificación: el valor óptimo queda documentado
   en `AGENTS.md` con las tres mediciones.
@@ -203,6 +203,15 @@
   la determina el efuse que simulemos, no el enlace. Se mide a mano, y el
   resultado se registra en `AGENTS.md` aunque sea "sin diferencia medible", que es
   un resultado válido.
+
+  **Cerrada sin A/B (decisión del usuario, 2026-09-29):** el A/B formal se descarta
+  y `auto` (objetivo del efuse: CCK 16 / OFDM 14 / HT 13 dBm) queda como estado
+  final. Contexto de la decisión: el watchdog que forzaba 20 dBm ya no existe
+  (4.3), la bajada pasó de 13 a ~25 Mbps con potencia en auto (5.3), y la
+  videollamada se mantiene en "good" — no hay síntoma que un A/B pudiera
+  arreglar. Coste asumido y anotado: no existen las tres mediciones comparativas;
+  si algún día la tasa descendente se degrada con señal buena, esta es la primera
+  tarea que reabrir.
 
 - [x] 4.6 Revisar que no hay ninguna vía por la que se pueda reintroducir una anulación
   fija sin que el CI lo note. Verificación: buscar en el repo y en
@@ -251,7 +260,7 @@
   lee `1` con el módulo en ejercicio. `rtw_en_gro` (default `1` en el fuente desde
   1.8.0) opera porque NAPI está activo.
 
-- [ ] 5.5 Estabilidad de NAPI bajo cambio de canal del router: provocar al menos un
+- [x] 5.5 Estabilidad de NAPI bajo cambio de canal del router: provocar al menos un
   cambio de canal y observar si aparece `surprise_removed` o un counters de
   desconexión USB nuevo. Verificación: si aparece `surprise_removed`, revertir solo
   `rtw_en_napi` (manteniendo GRO) y registrar el resultado en el comentario de
@@ -262,10 +271,25 @@
   esta vez: que el módulo con NAPI activo se carga y se descarga sin fugas
   (tarea 7.2), que es donde el `-EPIPE` se convierte en `surprise_removed`.
 
-- [ ] 5.6 Consolidar el resultado de 5.5 en el comentario de `rtw_io.h`: si NAPI se
+  **Verificado (2026-09-29):** cambio de canal 10 → 9 en el router de la red de
+  despliegue, con NAPI+GRO activos. **No apareció** `-EPIPE`, ni `surprise_removed`,
+  ni interfaz muerta. Lo que sí ocurrió: el dongle **rebotó a nivel USB**
+  (`usb 2-1.3: USB disconnect` → re-enumeración, ~3 s) y se recuperó **solo**:
+  re-probe, rename de la interfaz y reasociación en el canal 9 a -50 dBm con las
+  tasas intactas (tx 65 / rx 58.5). Tras la recuperación: 0% de pérdida y RTT
+  medio 3.6 ms. NAPI **se queda**; no hay nada que revertir. La traza completa del
+  evento está en el comentario de `rtw_io.h` (consolidada en la 5.6).
+
+- [x] 5.6 Consolidar el resultado de 5.5 en el comentario de `rtw_io.h`: si NAPI se
   queda, la justification de `MAX_CONTINUAL_IO_ERR = 80` se actualiza; si se revierte,
   se documenta por qué y se hace notar que la premisa original (sin buffering) era
   falsa. Verificación: el comentario refleja el estado real y medido.
+
+  **Hecho (2026-09-29):** NAPI se queda, así que el bloque "MEDIDO 2026-09-29" del
+  comentario de `MAX_CONTINUAL_IO_ERR` (`driver/include/rtw_io.h`) ahora registra
+  el evento completo: cambio de canal 10 → 9, rebote USB de ~3 s con recuperación
+  automática, sin `-EPIPE` ni `surprise_removed` — el escenario que apagó NAPI
+  originalmente, superado con NAPI activo.
 
 ## 6. Cierre
 

@@ -289,6 +289,16 @@ struct reg_protocol_wt {
  * El valor 80 SE CONSERVA a proposito: prevenir un surprise_removed masivo no
  * hace daño, y revertirlo seria un cambio de comportamiento sin evidencia que
  * lo respalde. Lo unico que no se sostiene es la premisa, y ya no aparece.
+ *
+ * MEDIDO 2026-09-29 (tarea 5.5 del change, con NAPI+GRO activos en 1.8.1):
+ * cambio de canal del router 10 -> 9 en la red de despliegue. Resultado:
+ * el dongle rebota a nivel USB (disconnect + re-enumeracion, ~3 s) y se
+ * recupera SOLO: el driver re-probea, renombra la interfaz y reasocia en
+ * el canal nuevo a -50 dBm con las tasas intactas. NO aparecio ni -EPIPE
+ * ni surprise_removed ni interfaz muerta: la ventana que justifica los 80
+ * es real y el umbral aguanto el evento completo sin escalado. Este es
+ * el escenario que apago NAPI originalmente, ahora superado con NAPI
+ * activo. Detalles en docs/THROUGHPUT.md y en tasks.md (5.5).
  */
 #define MAX_CONTINUAL_IO_ERR 80
 
