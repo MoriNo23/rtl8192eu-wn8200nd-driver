@@ -1,4 +1,4 @@
-# Spec Delta
+# ci-verification Specification
 
 ## Purpose
 
@@ -7,7 +7,7 @@ en GitHub Actions y no en la máquina del desarrollador, y que la configuración
 distribuida está protegida por aserciones automáticas que fallan ante una
 regresión silenciosa.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: La compilación se verifica en CI
 

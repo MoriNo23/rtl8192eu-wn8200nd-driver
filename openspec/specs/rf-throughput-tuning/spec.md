@@ -1,4 +1,4 @@
-# Spec Delta
+# rf-throughput-tuning Specification
 
 ## Purpose
 
@@ -7,14 +7,20 @@ degradan por sí mismas el rendimiento de RF, y fijar las invariantes —región
 potencia, escalado por tasa, agregación, entrega de tramas y ancho de banda— que
 un despliegue de barrio denso en 2.4 GHz necesita para descargas rápidas y estables.
 
-## ADDED Requirements
+## Requirements
 
-### Requirement: La potencia de transmisión sigue el objetivo del hardware y del dominio regulatorio
+### Requirement: La potencia de transmisión sigue el objetivo del hardware
 
 En ausencia de una anulación explícita del operador, la potencia de transmisión
 efectiva SHALL seguir el objetivo calibrado en el hardware para la banda y la ruta
 de RF activas. Ningún componente de espacio de usuario SHALL sostener una anulación
 de potencia fija como parte del estado por defecto del sistema.
+
+El recorte contra el dominio regulatorio **no forma parte** de esta garantía: la
+tabla de límites del driver está desactivada desde 1.8.1 porque activarla impide
+cargar el módulo (BUG-TXPOWER-001, `docs/BUGS.md`). La protección efectiva frente
+al dominio es que el objetivo del hardware queda por debajo del tope de 2.4 GHz
+de los dominios en uso. Reactivar el recorte exige cerrar antes ese bug.
 
 #### Scenario: El estado por defecto no tiene anulación de potencia
 
@@ -30,12 +36,22 @@ de potencia fija como parte del estado por defecto del sistema.
 - **THEN** la tasa más alta no requiere más potencia que la más baja, y la potencia
   efectiva se queda en el objetivo del hardware o por debajo
 
-#### Scenario: Una anulación por encima del límite regulatorio se rechaza o se recorta
+#### Scenario: El estado por defecto queda por debajo del tope regulatorio
 
-- **WHEN** un operador solicita una potencia fija superior al límite del dominio
+- **WHEN** el driver opera con su configuración por defecto (`CONFIG_TXPWR_LIMIT=n`,
+  objetivo del efuse: CCK 16 / OFDM 14 / HT 13 dBm) en un dominio 2.4 GHz con tope
+  de 20 dBm (US o mundo)
+- **THEN** la potencia efectiva queda por debajo del tope del dominio sin que el
+  driver aplique ningún recorte, porque el objetivo del hardware ya está por debajo
+
+#### Scenario: Una anulación por encima del tope regulatorio NO se recorta (hueco conocido)
+
+- **WHEN** un operador solicita una potencia fija superior al tope del dominio
   regulatorio activo
-- **THEN** la solicitud se rechaza, o la potencia efectiva queda recortada al
-  límite; en ningún caso se emite por encima del límite
+- **THEN** el driver no aplica recorte regulatorio alguno: la tabla de límites está
+  desactivada (BUG-TXPOWER-001). El hueco está documentado y no se cierra
+  reactivando `CONFIG_TXPWR_LIMIT` sin arreglar antes el bug de
+  `rtw_txpwr_lmt_add_with_nlen`
 
 ### Requirement: El dominio regulatorio no se modifica
 

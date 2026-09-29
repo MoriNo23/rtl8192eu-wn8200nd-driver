@@ -1,4 +1,4 @@
-# Spec Delta
+# driver-runtime-silence Specification
 
 ## Purpose
 
@@ -6,7 +6,7 @@ Define la superficie de silencio del driver: qué se garantiza que el módulo **
 emite ni expone en runtime, de modo que el equipo funcione sin ruido de kernel
 periódico y sin dependencias de monitorización que nadie consume.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: El driver no emite logging en runtime
 
