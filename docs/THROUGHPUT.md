@@ -52,3 +52,36 @@ desoldada (ver `AGENTS.md`, parche 1T1R).
 - La señal leyó -78 dBm justo al terminar las corridas y volvió a
   -50/-55 en el minuto siguiente: es la media de RSSI en tránsito, no una
   degradación del enlace.
+
+## 2026-09-29 — cambio de canal del router con NAPI+GRO activos (tarea 5.5)
+
+**Prueba:** el router de la red de despliegue (`NAVI-CD91C4`) cambió de canal
+10 → 9. Es el escenario que motivó apagar NAPI originalmente (`-EPIPE` →
+`surprise_removed` durante un channel switch).
+
+**Traza del evento (dmesg):**
+
+```
+[10857.389] usb 2-1.3: USB disconnect, device number 9
+[10860.150] usb 2-1.3: new high-speed USB device number 10 using ehci-pci
+[10860.248] usb 2-1.3: New USB device found, idVendor=2357, idProduct=0126
+[10861.452] rtl8192eu 2-1.3:1.0 wn8200nd: renamed from wlan0 (while UP)
+[10863.201] beacons con country IE procesados al reasociar (región US)
+```
+
+**Lectura:** el dongle **rebotó a nivel USB** — disconnect y re-enumeración,
+~3 s de corte — y se recuperó **solo**: el driver re-probeó, renombró la
+interfaz y reasoció en el canal 9 a -50 dBm con las tasas intactas
+(tx 65 / rx 58.5 Mbps). **No apareció** `-EPIPE`, ni `surprise_removed`, ni
+interfaz muerta pidiendo `modprobe` a mano. Tras la recuperación: 0% de
+pérdida al gateway y RTT medio 3.6 ms.
+
+**Qué significa:** la ventana de silencio de radio que justifica
+`MAX_CONTINUAL_IO_ERR = 80` es real, el umbral aguantó el evento completo
+sin escalar, y NAPI —apagado históricamente por este mismo escenario—
+queda validado activo. El rebote USB con recuperación automática es el
+comportamiento a esperar ahora: ~3 s de corte, sin intervención.
+
+**Limitaciones:** una sola provocación (la tarea pedía "al menos un cambio
+de canal"). El rebote USB no se ha visto en más eventos, así que su
+frecuencia real bajo cambios de canal no está medida.
