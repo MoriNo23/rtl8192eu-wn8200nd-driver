@@ -23,7 +23,7 @@ make -C driver clean && make -j"$(nproc)" -C driver all
 sudo ./install_manual.sh    # DKMS add/build/install + module reload + NM restart
 ```
 
-Verify: `cat /sys/module/8192eu/version` → should print the DKMS version (currently `1.9.0`).
+Verify: `cat /sys/module/8192eu/version` → should print the DKMS version (currently `2.0.0`).
 Quick reload without reinstalling: `~/.local/bin/reload-wn8200nd-1ant` (installed by the script).
 
 ## Tuning (other adapters)

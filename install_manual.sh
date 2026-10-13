@@ -24,7 +24,7 @@ KO_SRC="$REPO_DIR/driver/8192eu.ko"
 KVER="$(uname -r)"
 KO_DST="/lib/modules/$KVER/kernel/drivers/net/wireless/8192eu.ko"
 PKG="rtl8192eu"
-VER="1.9.0"
+VER="2.0.0"
 USRSRC="/usr/src/$PKG-$VER"
 MODPARAM_CONF="/etc/modprobe.d/8192eu.conf"
 
