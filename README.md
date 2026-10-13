@@ -280,6 +280,7 @@ What to use instead:
 | Did the module load? | `lsmod \| grep 8192eu`, `dmesg \| grep -i 8192eu` (core messages, not driver ones) |
 | Signal, rate, negotiated width | `wn8200nd-antenna --once`, `iw dev wn8200nd info` |
 | Which parameters affect RX sensitivity? | [`docs/RF-SENSITIVITY.md`](docs/RF-SENSIVITY.md) |
+| Why did the adapter collapse during the day but work at night? | [`docs/DAYTIME.md`](docs/DAYTIME.md) — RX A-MPDU window capped to 16 subframes since 1.9.0 |
 
 ---
 

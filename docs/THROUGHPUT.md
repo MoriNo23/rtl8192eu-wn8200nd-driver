@@ -4,6 +4,15 @@ Registro de mediciones de bajada sostenida. Cada cifra lleva su contexto
 (red, señal, tasas negociadas), porque un número de velocidad sin contexto
 no significa nada.
 
+## Nota 1.9.0 (2026-10-14)
+
+Todas las cifras de abajo se midieron con la ventana RX A-MPDU sin capar
+(64 subtramas). Desde 1.9.0 el default es **16 subtramas**
+(`CONFIG_RTW_RX_AMPDU_SZ_LIMIT_1SS`, `docs/DAYTIME.md`): más overhead de
+BlockAck por bloque ⇒ puede bajar algo el pico de bajada (se espera <20%;
+el baseline a re-validar de madrugada es 25 Mbps). Si el throughput
+nocturno aprieta, el punto medio documentado es `0x20` (32 subtramas).
+
 ## 2026-09-29 — efecto de GRO + NAPI (tarea 5.3 del change)
 
 **Contexto del enlace:** red `NAVI-CD91C4` (2.4G, canal 10), IP

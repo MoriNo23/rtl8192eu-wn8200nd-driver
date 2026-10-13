@@ -426,6 +426,14 @@ jobs:
           # CONFIG_PSD_TOOL debe seguir a y: su macro vive en
           # phydm_features_iot.h y apagarlo rompe el enlazado.
           expect CONFIG_PSD_TOOL        y
+          # 1.9.0: ventana RX A-MPDU 1SS capada a 16 subtramas (fix del colapso
+          # diurno, docs/DAYTIME.md). Vive en drv_conf.h (no en el Makefile):
+          # si alguien la revierte a 0xFF sin evidencia, el CI avisa.
+          if ! grep -q 'CONFIG_RTW_RX_AMPDU_SZ_LIMIT_1SS {0x10, 0x10, 0x10, 0x10}' driver/include/drv_conf.h; then
+            echo "::error::CONFIG_RTW_RX_AMPDU_SZ_LIMIT_1SS debe seguir en {0x10, 0x10, 0x10, 0x10} (fix colapso diurno, docs/DAYTIME.md)"
+            exit 1
+          fi
+          echo "OK: RX AMPDU 1SS capado a 16 subtramas (1.9.0)"
 
       - name: "Anti-sustitucion: el default de rtw_usb_rxagg_mode sobrevive a la HAL"
         # design.md D5. usb_halinit.c:115-116 sustituye por RX_AGG_DMA todo
