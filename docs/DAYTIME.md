@@ -102,6 +102,14 @@ Tres fenómenos distintos se confunden bajo la palabra "ruido":
 
 ## Cómo ver el "ruido" en números
 
+> **⚠️ Requiere build con `CONFIG_PROC_DEBUG=y`.** El fork lo apagó en 1.8.0
+> (`driver/Makefile`: "superficie de depuración en runtime desactivada";
+> `rtw_proc.o` sale del build) y **1.9.0 lo mantiene apagado**: por eso
+> `/proc/net/rtl8192eu/` no existe aunque el módulo esté cargado. Con
+> PROC_DEBUG=n, el A/B de `rx_ampdu` solo vía recarga de módulo (modprobe
+> options) y la medición objetiva es ping p95. El `survey dump` sí funciona
+> siempre (va por la interfaz ath9k, mainline).
+
 - **Ocupación de canal (vía deferral)**: `iw dev wlan0 survey dump`. El
   driver Realtek no implementa survey; medir con la interfaz ath9k interna
   mientras el wn8200nd lleva tráfico (el canal es compartido: el busy% vale
@@ -117,6 +125,38 @@ Tres fenómenos distintos se confunden bajo la palabra "ruido":
   - `Window Shift Count`: la ventana de BA saltó hacia adelante.
   Con ventana 64 de día suben en ráfagas; con 16, mucho menos. Es la prueba
   objetiva del mecanismo (y del efecto del fix) sin depender de estrellas.
+
+## Hallazgo físico post-cierre: la geometría pesa más que la señal
+
+Observación del usuario (en stonepi/ath9k): los episodios de ruido+lag
+también ocurren en el interno, y forzar la pantalla muy abierta mejora
+estabilidad y ping **con la misma señal leída**. Interpretación:
+
+- La antena interna vive en el borde/tapa: abrir la pantalla cambia
+  orientación y polarización, y la tapa actúa de reflector a 2.4 GHz
+  (lambda ~12.5 cm) — la geometría redistribuye lóbulos y nulos.
+- RSSI constante hacia NAVI con menos ruido entrante es coherente: los
+  interferentes están en OTRAS direcciones/polarizaciones que el AP; un
+  cambio de geometría puede dejar intacto el enlace útil y recortar los
+  caminos de ruido. Menos subtramas dañadas ⇒ menos agujeros ⇒ mejor p95.
+- Confirma las dos capas del caso: (1) cuánta interferencia ENTRA es física
+  (antena/geometría/apuntado); (2) cuánto DAÑO hace la que entra es de
+  driver (head-of-line, capado a 16). ath9k sufre la capa 1 igual (mismo
+  entorno; episodio P95 241 ms medido con canal al 10%) pero digiere mejor
+  la capa 2 (path RX mainline): solo cae en episodios, no colapsa.
+- Si el efecto es instantáneo y binario al mover la tapa, sospechar
+  conector de antena flojo en la bisagra (clásico en laptops): wiggle test
+  durante un episodio para descartarlo.
+
+Tests de una variable (ping 60 s, P50/P95, repetir 3 veces):
+
+1. Tapa normal vs muy abierta.
+2. Rotar la laptop 90/180 grados (polarización).
+3. Cantenna: apuntado directo a NAVI vs unos grados off-axis — el apuntado
+   también define a QUÉ vecinos se amplifica.
+4. Comparar postura/lugar de uso de madrugada vs día: si la geometría de
+   uso cambia, parte del efecto día/noche puede ser postura, no solo
+   tráfico.
 
 ## Limitaciones / notas
 
